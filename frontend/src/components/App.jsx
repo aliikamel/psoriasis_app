@@ -14,6 +14,7 @@ function App() {
         <Route exact path="/" element={<HelloWorld />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+          <Route path="/simulate-model" element={<SimulateModel/>} />
       </Routes>
     </Router>
   );
