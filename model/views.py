@@ -4,6 +4,8 @@ from rest_framework.response import Response
 import matlab.engine
 import os
 import pandas as pd
+from django.http import QueryDict
+import json
 
 
 @api_view(['GET'])
@@ -11,8 +13,67 @@ def hello_world(request):
     return Response({'message': 'Hello, world this is coming from DJANGO!'})
 
 
-@api_view(['GET'])
+@api_view(['POST'])  # Change to POST to accept form data
 def run_model(request):
+    # Starting the MATLAB engine
+    eng = matlab.engine.start_matlab()
+
+    # Pre-fill the data structure with np.nan for all expected fields
+    pre_filled_data = {
+        "ID": [0],
+        "PASI_PRE_TREATMENT": [7.0],
+        **{f"PASI_END_WEEK_{i}": np.nan for i in range(1, 13)},
+        **{f"UVB_DOSE_{i}": np.nan for i in range(1, 34)},
+        "LAST_FU_PASI": [np.nan],
+        "LAST_FU_MONTH": [np.nan],
+        "UVB_DOSE_TOTAL": [47.89],
+        "UV_EFF_W_12": [0]
+    }
+
+    # Update the pre-filled structure with actual data received
+    data_received = request.body.decode('utf-8')
+    data_dict = json.loads(data_received)
+
+    pre_filled_data.update(data_dict)
+    filled_data = pre_filled_data
+
+    print(filled_data)
+
+    for key, value in filled_data.items():
+        if value == '':
+            filled_data[key] = [np.nan]
+            print(key, filled_data[key])
+        if isinstance(filled_data[key], str):
+            filled_data[key] = float(filled_data[key])
+            print('yes', filled_data[key])
+        if not isinstance(filled_data[key], list):
+            filled_data[key] = [filled_data[key]]
+
+        filled_data[key] = matlab.double(filled_data[key])
+
+    print(filled_data)
+
+    data_struct = eng.struct(filled_data)
+
+    # Define paths
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_v8_4.xml')
+    sbml_model_path_matlab = eng.char(sbml_model_path)
+
+    # Add MATLAB scripts directory to MATLAB engine's path
+    matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
+    eng.addpath(matlab_scripts_path, nargout=0)
+
+    # Call the MATLAB function
+    result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=1)
+
+    # Quit MATLAB engine
+    eng.quit()
+    return Response({'result': result})
+
+
+@api_view(['GET'])
+def test_model(request):
     # Starting the MATLAB engine
     eng = matlab.engine.start_matlab()
     # Define the paths to your SBML and Excel files
@@ -86,8 +147,11 @@ def run_model(request):
     data_dict = data_df.to_dict('list')  # Convert DataFrame to dict of lists
 
     # Convert numerical lists to matlab.double
+    print(data_dict)
     for key, val in data_dict.items():
         data_dict[key] = matlab.double(val if val else [np.nan])  # Handle empty lists
+
+    print(data_dict)
 
     # Convert dictionary to MATLAB struct
     data_struct = eng.struct(data_dict)
@@ -98,7 +162,28 @@ def run_model(request):
 
     # Assuming 'fit_uv_eff' is adapted to receive serialized model info and data structure
     # Call the MATLAB function with serialized model and data
-    result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=1)
+    result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=2)
+
+    # Extract the sim_data from the matlab.object
+    sim_data = eng.getfield(result[1], 'Data')
+    sim_data_names = eng.getfield(result[1], 'DataNames')
+    # sim_data = [float(value) for value in sim_data[0]]
+
+    # Convert sim_data to JSON serializable float
+    sim_data_python = convert_matlab_double_to_python(sim_data)
 
     eng.quit()
-    return Response({'result': result})
+    return Response({
+        'result': result[0],
+        'sim_data_names': sim_data_names,
+        'sim_data': sim_data_python
+    })
+
+
+def convert_matlab_double_to_python(value):
+    if isinstance(value, matlab.double):
+        return [convert_matlab_double_to_python(item) for item in value]
+    elif isinstance(value, float):
+        return float(value)
+    else:
+        return value
