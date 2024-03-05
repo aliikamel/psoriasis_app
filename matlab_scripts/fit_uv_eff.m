@@ -1,4 +1,4 @@
-function [uv_eff] = fit_uv_eff(data, model)
+function [uv_eff, sim_data] = fit_uv_eff(data, model)
 
 model = sbmlimport(model);
 
