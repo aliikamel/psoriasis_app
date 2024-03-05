@@ -26,7 +26,7 @@ def run_model(request):
         **{f"UVB_DOSE_{i}": np.nan for i in range(1, 34)},
         "LAST_FU_PASI": [np.nan],
         "LAST_FU_MONTH": [np.nan],
-        "UVB_DOSE_TOTAL": [47.89],
+        "UVB_DOSE_TOTAL": [0],
         "UV_EFF_W_12": [0]
     }
 
@@ -39,14 +39,24 @@ def run_model(request):
 
     print(filled_data)
 
+    uvb_dose_total = 0
     for key, value in filled_data.items():
+        # Make sure the value is not an empty string
         if value == '':
             filled_data[key] = [np.nan]
             print(key, filled_data[key])
+        # Make sure the value is a float
         if isinstance(filled_data[key], str):
             filled_data[key] = float(filled_data[key])
-            print('yes', filled_data[key])
+        # Make sure the value is in a list
         if not isinstance(filled_data[key], list):
+            # Check if UVB_DOSE_# is not NaN first
+            if key.startswith('UVB_DOSE_') and filled_data[key] is not np.nan:
+                # Add the value of the UVB Dose to UVB_DOSE_TOTAl
+                uvb_dose_total += filled_data[key]
+                filled_data['UVB_DOSE_TOTAL'] = [uvb_dose_total]
+
+            # Then put the value in the form of a list
             filled_data[key] = [filled_data[key]]
 
         filled_data[key] = matlab.double(filled_data[key])
@@ -65,11 +75,22 @@ def run_model(request):
     eng.addpath(matlab_scripts_path, nargout=0)
 
     # Call the MATLAB function
-    result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=1)
+    result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=2)
+
+    best_uv_eff = result[0]
+    sim_data = eng.getfield(result[1], 'Data')
+    sim_data_names = eng.getfield(result[1], 'DataNames')
+
+    # Convert sim_data to JSON serializable float
+    sim_data_python = convert_matlab_double_to_python(sim_data)
 
     # Quit MATLAB engine
     eng.quit()
-    return Response({'result': result})
+    return Response({
+        'result': best_uv_eff,
+        'sim_data_names': sim_data_names,
+        'sim_data': sim_data_python
+    })
 
 
 @api_view(['GET'])
@@ -165,6 +186,7 @@ def test_model(request):
     result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=2)
 
     # Extract the sim_data from the matlab.object
+    best_uv_eff = result[0]
     sim_data = eng.getfield(result[1], 'Data')
     sim_data_names = eng.getfield(result[1], 'DataNames')
     # sim_data = [float(value) for value in sim_data[0]]
@@ -174,7 +196,7 @@ def test_model(request):
 
     eng.quit()
     return Response({
-        'result': result[0],
+        'result': best_uv_eff,
         'sim_data_names': sim_data_names,
         'sim_data': sim_data_python
     })
