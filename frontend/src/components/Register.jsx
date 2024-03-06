@@ -1,12 +1,44 @@
 import React from "react";
+import axios from "axios";
 import { ReactComponent as LogoWh } from "../assets/Logo-wh.svg";
 import { ReactComponent as LogoBl } from "../assets/Logo-bl.svg";
 import { useTheme } from "./ThemeContext";
-// import { useState, useEffect } from "react";
 
 function Register() {
   const { theme } = useTheme();
   const logo = theme === "dark" ? LogoBl : LogoWh;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    let data = e.target;
+
+    // Add logic for validation
+    // if (password === confirm_password) && terms checked
+    let formattedData = {
+      first_name: data[0].value,
+      last_name: data[1].value,
+      username: data[2].value,
+      password: data[3].value,
+      role: 'patient'
+    };
+
+    // Prepare data to be sent
+    const cleanedFormData = JSON.stringify(formattedData);
+    console.log(cleanedFormData)
+
+     try {
+       const response = await axios.post(
+         "http://localhost:8000/api/users/create-user/",
+         cleanedFormData
+       );
+       console.log("API Response:", response.data);
+       // Handle success here (e.g., showing a success message, redirecting, etc.)
+     } catch (error) {
+       console.error("API Error:", error.response);
+       // Handle error here (e.g., showing an error message)
+     }
+  };
+
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
@@ -25,7 +57,37 @@ function Register() {
             <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
               Create an account
             </h1>
-            <form className="space-y-4 md:space-y-6" action="#">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 md:space-y-6"
+              // action="#"
+            >
+                <div>
+                  <label
+                    for="first_name"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Name
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      name="first_name"
+                      id="first_name"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="First Name"
+                      required="true"
+                    />
+                    <input
+                      type="text"
+                      name="last_name"
+                      id="last_name"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="Last Name"
+                      required="true"
+                    />
+                  </div>
+                </div>
               <div>
                 <label
                   for="email"
@@ -39,7 +101,7 @@ function Register() {
                   id="email"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="name@company.com"
-                  required=""
+                  required="true"
                 />
               </div>
               <div>
@@ -55,7 +117,7 @@ function Register() {
                   id="password"
                   placeholder="••••••••"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required=""
+                  required="true"
                 />
               </div>
               <div>
@@ -71,7 +133,7 @@ function Register() {
                   id="confirm-password"
                   placeholder="••••••••"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required=""
+                  required="true"
                 />
               </div>
               <div className="flex items-start">
@@ -81,7 +143,7 @@ function Register() {
                     aria-describedby="terms"
                     type="checkbox"
                     className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
-                    required=""
+                    required="true"
                   />
                 </div>
                 <div className="ml-3 text-sm">
