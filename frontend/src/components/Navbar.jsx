@@ -5,6 +5,15 @@ import ThemeSwitcher from "./ThemeSwitcher";
 import React from "react";
 
 function Navbar() {
+  const openMenu = () => {
+    let menu = document.getElementById("user-menu-button");
+    menu.hidden ? (menu.hidden = false) : (menu.hidden = true);
+  };
+
+  let currentPage = window.location.pathname;
+  const pageStyle =
+    "text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium";
+
   return (
     <>
       <nav className={"bg-gray-800"}>
@@ -71,13 +80,21 @@ function Navbar() {
                 <div className="flex space-x-4">
                   <a
                     href="/"
-                    className="bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium"
+                    className={
+                      currentPage === "/"
+                        ? "bg-gray-900 " + pageStyle
+                        : pageStyle
+                    }
                   >
                     Dashboard
                   </a>
                   <a
                     href="/simulate-model"
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                    className={
+                      currentPage === "/simulate-model"
+                        ? "bg-gray-900 " + pageStyle
+                        : pageStyle
+                    }
                   >
                     Model
                   </a>
@@ -125,9 +142,9 @@ function Navbar() {
                   <button
                     type="button"
                     className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-                    id="user-menu-button"
                     aria-expanded="false"
                     aria-haspopup="true"
+                    onClick={openMenu}
                   >
                     <span className="absolute -inset-1.5"></span>
                     <span className="sr-only">Open user menu</span>
@@ -137,11 +154,40 @@ function Navbar() {
 
                 <div
                   hidden={true}
+                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md shadow bg-white dark:border dark:bg-gray-800 dark:border-gray-700 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu-button"
+                  tabIndex="-1"
+                  id="user-menu-button"
+                >
+                  <a
+                    href="/login"
+                    className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
+                    role="menuitem"
+                    tabIndex="-1"
+                    id="user-menu-item-0"
+                  >
+                    Login
+                  </a>
+                  <a
+                    href="/register"
+                    className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
+                    role="menuitem"
+                    tabIndex="-1"
+                    id="user-menu-item-1"
+                  >
+                    Register
+                  </a>
+                </div>
+                {/* <div
+                  hidden={true}
                   className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="user-menu-button"
                   tabIndex="-1"
+                  id="user-menu-button"
                 >
                   <a
                     href="#"
@@ -170,7 +216,7 @@ function Navbar() {
                   >
                     Sign out
                   </a>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -181,7 +227,7 @@ function Navbar() {
             <a
               href={"/"}
               className={
-                "bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium"
+                currentPage === "/" ? "bg-gray-900" + pageStyle : pageStyle
               }
               aria-current={"page"}
             >
