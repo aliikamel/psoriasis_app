@@ -44,7 +44,3 @@ class DermatologistProfileViewSet(viewsets.ModelViewSet):
     serializer_class = DermatologistProfileSerializer
     queryset = DermatologistProfile.objects.all()
 
-# Add more viewsets as necessary for your models
-
-# In your urls.py, register the viewsets with a router for automatic URL routing
-# and the create_user view with a specific URL pattern.
