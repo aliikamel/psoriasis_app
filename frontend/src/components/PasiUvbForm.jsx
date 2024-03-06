@@ -104,7 +104,7 @@ function PasiUvbForm() {
         <div className="mt-4">
           <label
             htmlFor="pasiPreTreatment"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-100 dark:text-gray-100"
           >
             PASI_PRE_TREATMENT
           </label>
@@ -113,7 +113,7 @@ function PasiUvbForm() {
             id="pasiPreTreatment"
             value={pasiPreTreatment}
             onChange={(e) => setPasiPreTreatment(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-80 rounded-md border-gray-300 shadow-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 sm:text-sm"
           />
         </div>
         {/* PASI Weeks Inputs */}
@@ -122,7 +122,7 @@ function PasiUvbForm() {
             <div key={index} className="relative space-y-2">
               <label
                 htmlFor={week.week}
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100 dark:text-gray-100"
               >
                 {week.week}
               </label>
@@ -131,7 +131,7 @@ function PasiUvbForm() {
                 id={week.week}
                 value={week.value}
                 onChange={(e) => handlePasiChange(index, e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 sm:text-sm"
               />
               {index >= initialPasiCount && ( // Only render remove button for additional inputs
                 <button
@@ -148,7 +148,7 @@ function PasiUvbForm() {
         <button
           type="button"
           onClick={addPasiWeek}
-          className="mt-2 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+          className="mt-2 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
         >
           Add PASI Week
         </button>
@@ -156,7 +156,7 @@ function PasiUvbForm() {
         <div className="mt-4">
           <label
             htmlFor="pasiEndTreatment"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-100"
           >
             PASI_END_TREATMENT
           </label>
@@ -165,7 +165,7 @@ function PasiUvbForm() {
             id="pasiEndTreatment"
             value={pasiEndTreatment}
             onChange={(e) => setPasiEndTreatment(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
         {/* UVB Doses Inputs */}
@@ -174,7 +174,7 @@ function PasiUvbForm() {
             <div key={index} className="relative space-y-2">
               <label
                 htmlFor={dose.dose}
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-100"
               >
                 {dose.dose}
               </label>
@@ -183,7 +183,7 @@ function PasiUvbForm() {
                 id={dose.dose}
                 value={dose.value}
                 onChange={(e) => handleUvbChange(index, e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
               {index >= initialUvbCount && ( // Only render remove button for additional inputs
                 <button
@@ -200,13 +200,13 @@ function PasiUvbForm() {
         <button
           type="button"
           onClick={addUvbDose}
-          className="mt-2 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+          className="mt-2 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
         >
           Add UVB Dose
         </button>
         <button
           type="submit" // This ensures the form gets submitted
-          className="mt-4 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+          className="mt-4 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600"
         >
           Submit
         </button>
