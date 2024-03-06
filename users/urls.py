@@ -10,5 +10,5 @@ router.register(r'users', views.CustomUserViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('create_user/', views.create_user, name='create_user'),
+    path('create-user/', views.create_user, name='create_user'),
 ]

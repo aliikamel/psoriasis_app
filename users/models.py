@@ -31,7 +31,7 @@ class CustomUser(AbstractUser):
 
 class PatientProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='patient_profile')
-    dob = models.DateField(verbose_name='Date of Birth')
+    dob = models.DateField(null=True, blank=True, verbose_name='Date of Birth')
     contact_number = models.CharField(max_length=15, blank=True, verbose_name='Contact Number')
     address = models.TextField(blank=True, verbose_name='Address')
     medical_history = models.TextField(blank=True, verbose_name='Medical History')
