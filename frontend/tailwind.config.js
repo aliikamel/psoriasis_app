@@ -1,8 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class",
   content: [
-      "./src/**/*.{js,jsx}",
-      './public/index.html',
+    "./src/**/*.{js,jsx}",
+    './public/index.html',
   ],
   theme: {
     screens: {
@@ -13,7 +14,42 @@ module.exports = {
       '2xl': '1536px',
     },
     fontFamily: {
-      sans: ['Graphik', 'sans-serif'],
+      'body': [
+        'Raleway',
+        'ui-sans-serif',
+        'system-ui',
+        '-apple-system',
+        'system-ui',
+        'Segoe UI',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'Noto Sans',
+        'sans-serif',
+        'Apple Color Emoji',
+        'Segoe UI Emoji',
+        'Segoe UI Symbol',
+        'Noto Color Emoji'
+      ],
+      sans: [
+        'Graphik',
+        'ui-sans-serif',
+        'Raleway',
+        'ui-sans-serif',
+        'system-ui',
+        '-apple-system',
+        'system-ui',
+        'Segoe UI',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'Noto Sans',
+        'sans-serif',
+        'Apple Color Emoji',
+        'Segoe UI Emoji',
+        'Segoe UI Symbol',
+        'Noto Color Emoji'
+      ],
       serif: ['Merriweather', 'serif'],
     },
     extend: {
@@ -27,7 +63,7 @@ module.exports = {
     }
   },
   plugins: [
-      require('@tailwindcss/forms'),
+    require('@tailwindcss/forms'),
   ],
 }
 
