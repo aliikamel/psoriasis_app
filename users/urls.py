@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r'patients', views.PatientProfileViewSet)
 router.register(r'dermatologists', views.DermatologistProfileViewSet)
+router.register(r'users', views.CustomUserViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

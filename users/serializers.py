@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from .models import CustomUser, PatientProfile, DermatologistProfile, DermatologistPatientRelationship, PatientData
 
@@ -5,13 +6,8 @@ from .models import CustomUser, PatientProfile, DermatologistProfile, Dermatolog
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id',
-                  'first_name',
-                  'last_name',
-                  'username',
-                  'email',
-                  'role'
-                  ]  # Include other fields as necessary
+        fields = ['username', 'first_name', 'last_name', 'password', 'role']
+        extra_kwargs = {'password': {'write_only': True}}
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):
@@ -47,15 +43,46 @@ class PatientDataSerializer(serializers.ModelSerializer):
         fields = ['patient_profile']  # Add more fields as you define them in your model
 
 
-# Define a serializer for creating users with a specific role
 class UserCreateSerializer(serializers.ModelSerializer):
+    dob = serializers.DateField(write_only=True, required=False)
+    license_number = serializers.CharField(write_only=True, required=False)
+    license_expiry_date = serializers.DateField(write_only=True, required=False)
+    specialization = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'password', 'role']
+        fields = ['username', 'first_name', 'last_name', 'password', 'role', 'dob', 'license_number',
+                  'license_expiry_date', 'specialization']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        user = CustomUser(**validated_data)
-        user.set_password(validated_data['password'])
-        user.save()
+        role = validated_data.pop('role', None)
+
+        # Using transaction.atomic to ensure database integrity during multi-step creation
+        with transaction.atomic():
+            user = CustomUser.objects.create_user(
+                username=validated_data['username'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                password=validated_data['password'],
+            )
+            user.role = role
+            user.save()
+
+            if role == 'patient':
+                PatientProfile.objects.create(
+                    user=user,
+                    dob=validated_data.get('dob', None),
+                    # Add other patient profile fields as necessary
+                )
+            elif role == 'dermatologist':
+                DermatologistProfile.objects.create(
+                    user=user,
+                    license_number=validated_data.get('license_number', None),
+                    license_expiry_date=validated_data.get('license_expiry_date', None),
+                    specialization=validated_data.get('specialization', None),
+                    # Add other dermatologist profile fields as necessary
+                )
+            # Handle other roles as necessary
+
         return user

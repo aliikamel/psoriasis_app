@@ -10,18 +10,23 @@ from .serializers import (CustomUserSerializer, PatientProfileSerializer,
 @api_view(['POST'])
 def create_user(request):
     """
-    Create a user with a specific role.
+    Create a user with a specific role and associated profile using the UserCreateSerializer.
     """
     serializer = UserCreateSerializer(data=request.data)
+
     if serializer.is_valid():
-        user = serializer.save()
-        if request.data['role'] == 'patient':
-            PatientProfile.objects.create(user=user)
-        elif request.data['role'] == 'dermatologist':
-            DermatologistProfile.objects.create(user=user)
-        # Handle other roles as necessary
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomUserViewSet(viewsets.ModelViewSet):
+    """
+    A viewset for viewing and editing patient profiles.
+    """
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
 
 
 class PatientProfileViewSet(viewsets.ModelViewSet):
