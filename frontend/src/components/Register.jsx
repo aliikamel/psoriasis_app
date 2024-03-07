@@ -2,7 +2,8 @@ import React from "react";
 import axios from "axios";
 import { ReactComponent as LogoWh } from "../assets/Logo-wh.svg";
 import { ReactComponent as LogoBl } from "../assets/Logo-bl.svg";
-import { useTheme } from "./ThemeContext";
+import { useTheme } from "../context/ThemeContext";
+import { authenticate } from "../utils/authenticate";
 
 function Register() {
   const { theme } = useTheme();
@@ -19,28 +20,29 @@ function Register() {
       last_name: data[1].value,
       username: data[2].value,
       password: data[3].value,
-      role: 'patient'
+      role: "patient",
     };
 
     // Prepare data to be sent
     const cleanedFormData = JSON.stringify(formattedData);
 
-     try {
-       const response = await axios.post(
-         "http://localhost:8000/api/users/create-user/",
-         cleanedFormData,
-         {
-           headers: {
-             "Content-Type": "application/json", // This line is critical
-           },
-         }
-       );
-       console.log("API Response:", response.data);
-       // Handle success here
-     } catch (error) {
-       console.error("API Error:", error.response);
-       // Handle error here
-     }
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/users/create-user/",
+        cleanedFormData,
+        {
+          headers: {
+            "Content-Type": "application/json", 
+          },
+        }
+      );
+      console.log("API Response:", response.data);
+      authenticate(response.data);
+      // Handle success here
+    } catch (error) {
+      console.error("API Error:", error.response);
+      // Handle error here
+    }
   };
 
   return (
@@ -66,32 +68,32 @@ function Register() {
               className="space-y-4 md:space-y-6"
               // action="#"
             >
-                <div>
-                  <label
-                    for="first_name"
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Name
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="first_name"
-                      id="first_name"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="First Name"
-                      required="true"
-                    />
-                    <input
-                      type="text"
-                      name="last_name"
-                      id="last_name"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Last Name"
-                      required="true"
-                    />
-                  </div>
+              <div>
+                <label
+                  for="first_name"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Name
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    name="first_name"
+                    id="first_name"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="First Name"
+                    required="true"
+                  />
+                  <input
+                    type="text"
+                    name="last_name"
+                    id="last_name"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="Last Name"
+                    required="true"
+                  />
                 </div>
+              </div>
               <div>
                 <label
                   for="email"

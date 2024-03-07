@@ -1,37 +1,50 @@
 import React from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { ReactComponent as LogoWh } from "../assets/Logo-wh.svg";
 import { ReactComponent as LogoBl } from "../assets/Logo-bl.svg";
-import { useTheme } from "./ThemeContext";
+import { useTheme } from "../context/ThemeContext";
+import { authenticate } from "../utils/authenticate";
 
 function Login() {
+  const navigate = useNavigate();
   const { theme } = useTheme();
   const logo = theme === "dark" ? LogoBl : LogoWh;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(e)
+    let data = e.target;
 
     // Prepare the data to be sent
     // Initialize an empty object for the formatted data
-    let formattedData = {};
+    let formattedData = {
+      username: data[0].value,
+      password: data[1].value,
+    };
 
     // Prepare data to be sent
     const cleanedFormData = JSON.stringify(formattedData);
+    console.log(cleanedFormData);
 
-   //  try {
-   //    const response = await axios.post(
-   //      "http://localhost:8000/api/model/run-model/",
-   //      cleanedFormData
-   //    );
-   //    console.log("API Response:", response.data);
-   //    // Handle success here (e.g., showing a success message, redirecting, etc.)
-   //  } catch (error) {
-   //    console.error("API Error:", error.response);
-   //    // Handle error here (e.g., showing an error message)
-   //  }
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/token/",
+        cleanedFormData,
+        {
+          headers: {
+            "Content-Type": "application/json", // This line is critical
+          },
+        }
+      );
+      console.log("API Response:", response.data);
+      authenticate(response.data);
+      // Redirect to home page upon successful login
+      navigate('/');
+    } catch (error) {
+      console.error("API Error:", error.response);
+      // Handle error here (e.g., showing an error message)
+    }
   };
-
 
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
@@ -51,7 +64,11 @@ function Login() {
             <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
               Login
             </h1>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6" action="#">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 md:space-y-6"
+              action="#"
+            >
               <div>
                 <label
                   for="email"
