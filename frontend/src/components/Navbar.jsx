@@ -1,8 +1,10 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
+import React from "react";
 import { ReactComponent as Logo } from "../assets/Logo-wh.svg";
 import { ReactComponent as Profile } from "../assets/Profile.svg";
 import ThemeSwitcher from "./ThemeSwitcher";
-import React from "react";
+import { isAuthenticated } from "../utils/auth";
+import { logout } from "../utils/logout";
 
 function Navbar() {
   const openMenu = () => {
@@ -79,9 +81,9 @@ function Navbar() {
               <div className="hidden sm:ml-6 sm:block">
                 <div className="flex space-x-4">
                   <a
-                    href="/"
+                    href="/dashboard"
                     className={
-                      currentPage === "/"
+                      currentPage === "/dashboard"
                         ? "bg-gray-900 " + pageStyle
                         : pageStyle
                     }
@@ -102,7 +104,7 @@ function Navbar() {
                     href="#"
                     className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
                   >
-                    Projects
+                    {isAuthenticated() ? "AUTHENTICATED" : "NOT"}
                   </a>
                   <a
                     href="#"
@@ -161,25 +163,52 @@ function Navbar() {
                   tabIndex="-1"
                   id="user-menu-button"
                 >
-                  <a
-                    href="/login"
-                    className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
-                    role="menuitem"
-                    tabIndex="-1"
-                    id="user-menu-item-0"
-                  >
-                    Login
-                  </a>
-                  <a
-                    href="/register"
-                    className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
-                    role="menuitem"
-                    tabIndex="-1"
-                    id="user-menu-item-1"
-                  >
-                    Register
-                  </a>
+                  {isAuthenticated() ? (
+                    <>
+                      <a
+                        href="/profile"
+                        className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
+                        role="menuitem"
+                        tabIndex="-1"
+                        id="user-menu-item-1"
+                      >
+                        Profile
+                      </a>
+                      <a
+                        href="/"
+                        className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
+                        role="menuitem"
+                        tabIndex="-1"
+                        id="user-menu-item-2" // Ensure unique ID
+                        onClick={logout}
+                      >
+                        Logout
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <a
+                        href="/login"
+                        className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
+                        role="menuitem"
+                        tabIndex="-1"
+                        id="user-menu-item-0"
+                      >
+                        Login
+                      </a>
+                      <a
+                        href="/register"
+                        className="block px-4 py-2 text-sm font-medium text-gray-800 dark:text-white"
+                        role="menuitem"
+                        tabIndex="-1"
+                        id="user-menu-item-1"
+                      >
+                        Register
+                      </a>
+                    </>
+                  )}
                 </div>
+
                 {/* <div
                   hidden={true}
                   className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
