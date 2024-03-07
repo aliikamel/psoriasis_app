@@ -8,11 +8,6 @@ from django.http import QueryDict
 import json
 
 
-@api_view(['GET'])
-def hello_world(request):
-    return Response({'message': 'Hello, world this is coming from DJANGO!'})
-
-
 @api_view(['POST'])  # Change to POST to accept form data
 def run_model(request):
     # Starting the MATLAB engine
