@@ -24,18 +24,22 @@ function Register() {
 
     // Prepare data to be sent
     const cleanedFormData = JSON.stringify(formattedData);
-    console.log(cleanedFormData)
 
      try {
        const response = await axios.post(
          "http://localhost:8000/api/users/create-user/",
-         cleanedFormData
+         cleanedFormData,
+         {
+           headers: {
+             "Content-Type": "application/json", // This line is critical
+           },
+         }
        );
        console.log("API Response:", response.data);
-       // Handle success here (e.g., showing a success message, redirecting, etc.)
+       // Handle success here
      } catch (error) {
        console.error("API Error:", error.response);
-       // Handle error here (e.g., showing an error message)
+       // Handle error here
      }
   };
 
