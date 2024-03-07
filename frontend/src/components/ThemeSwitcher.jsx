@@ -1,7 +1,7 @@
 // ThemeSwitcher.jsx
 import React from "react";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
-import { useTheme } from "./ThemeContext"; // Adjust the import path as needed
+import { useTheme } from "../context/ThemeContext";
 
 const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme();
