@@ -2,4 +2,5 @@
 export const authenticate = (data) => {
   localStorage.setItem("accessToken", data.access);
   localStorage.setItem("refreshToken", data.refresh);
+  localStorage.setItem("userRole", data.role);
 };
