@@ -23,7 +23,7 @@ class DermatologistProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DermatologistProfile
-        fields = ['user', 'license_number', 'license_expiry_date', 'specialization']
+        fields = ['user', 'license_number', 'specialization']
 
 
 class DermatologistPatientRelationshipSerializer(serializers.ModelSerializer):
@@ -46,13 +46,11 @@ class PatientDataSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     dob = serializers.DateField(write_only=True, required=False)
     license_number = serializers.CharField(write_only=True, required=False)
-    license_expiry_date = serializers.DateField(write_only=True, required=False)
     specialization = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'password', 'role', 'dob', 'license_number',
-                  'license_expiry_date', 'specialization']
+        fields = ['username', 'first_name', 'last_name', 'password', 'role', 'dob', 'license_number', 'specialization']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -72,16 +70,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
             if role == 'patient':
                 PatientProfile.objects.create(
                     user=user,
-                    dob=validated_data.get('dob', None),
-                    # Add other patient profile fields as necessary
                 )
             elif role == 'dermatologist':
                 DermatologistProfile.objects.create(
                     user=user,
                     license_number=validated_data.get('license_number', None),
-                    license_expiry_date=validated_data.get('license_expiry_date', None),
-                    specialization=validated_data.get('specialization', None),
-                    # Add other dermatologist profile fields as necessary
                 )
             # Handle other roles as necessary
 

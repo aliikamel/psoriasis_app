@@ -40,7 +40,6 @@ class PatientProfile(models.Model):
 class DermatologistProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='dermatologist_profile')
     license_number = models.CharField(max_length=20, unique=True, verbose_name='License Number')
-    license_expiry_date = models.DateField(verbose_name='License Expiry Date')
     specialization = models.CharField(max_length=100, blank=True, verbose_name='Specialization')
     # Add more dermatologist-specific fields as needed
 
