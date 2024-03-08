@@ -5,6 +5,7 @@ import { ReactComponent as Profile } from "../assets/Profile.svg";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isAuthenticated } from "../utils/auth";
 import { logout } from "../utils/logout";
+import { user_role } from "../utils/user_role";
 
 function Navbar() {
   const openMenu = () => {
@@ -90,16 +91,30 @@ function Navbar() {
                   >
                     Dashboard
                   </a>
-                  <a
-                    href="/simulate-model"
-                    className={
-                      currentPage === "/simulate-model"
-                        ? "bg-gray-900 " + pageStyle
-                        : pageStyle
-                    }
-                  >
-                    Model
-                  </a>
+                  {user_role() === "patient" ? (
+                    <a
+                      href="/diary"
+                      className={
+                        currentPage === "/diary"
+                          ? "bg-gray-900 " + pageStyle
+                          : pageStyle
+                      }
+                    >
+                      {"Diary"}
+                    </a>
+                  ) : (
+                    <a
+                      href="/simulate-model"
+                      className={
+                        currentPage === "/simulate-model"
+                          ? "bg-gray-900 " + pageStyle
+                          : pageStyle
+                      }
+                    >
+                      {"Model"}
+                    </a>
+                  )}
+
                   <a
                     href="#"
                     className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
@@ -110,7 +125,7 @@ function Navbar() {
                     href="#"
                     className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
                   >
-                    Calendar
+                    {user_role()}
                   </a>
                 </div>
               </div>
