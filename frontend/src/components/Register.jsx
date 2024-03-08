@@ -3,11 +3,12 @@ import axios from "axios";
 import { ReactComponent as LogoWh } from "../assets/Logo-wh.svg";
 import { ReactComponent as LogoBl } from "../assets/Logo-bl.svg";
 import { useTheme } from "../context/ThemeContext";
-import { authenticate } from "../utils/authenticate";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Tabs, Tab } from "./Tabs";
 
 function Register() {
+  const { login } = useAuth();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const logo = theme === "dark" ? LogoBl : LogoWh;
@@ -40,7 +41,7 @@ function Register() {
         }
       );
       console.log("API Response:", response.data);
-      authenticate(response.data);
+      login(response.data)
       navigate("/");
       // Handle success here
     } catch (error) {
@@ -52,7 +53,7 @@ function Register() {
   const handleDermatologistSubmit = async (e) => {
     e.preventDefault();
     let data = e.target;
-    console.log(e.target)
+    console.log(e.target);
     // Add logic for validation
     // if (password === confirm_password) && terms checked
     let formattedData = {
@@ -78,7 +79,7 @@ function Register() {
         }
       );
       console.log("API Response:", response.data);
-      authenticate(response.data);
+      login(response.data);
       navigate("/");
       // Handle success here
     } catch (error) {
@@ -88,8 +89,8 @@ function Register() {
   };
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+    <section className="bg-slate-100 dark:bg-gray-900 h-full">
+      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-full lg:py-0">
         <a
           href="/"
           className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white"

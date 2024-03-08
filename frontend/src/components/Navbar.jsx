@@ -3,11 +3,11 @@ import React from "react";
 import { ReactComponent as Logo } from "../assets/Logo-wh.svg";
 import { ReactComponent as Profile } from "../assets/Profile.svg";
 import ThemeSwitcher from "./ThemeSwitcher";
-import { isAuthenticated } from "../utils/auth";
-import { logout } from "../utils/logout";
-import { user_role } from "../utils/user_role";
+import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
+  const { isAuthenticated, role, logout } = useAuth();
+
   const openMenu = () => {
     let menu = document.getElementById("user-menu-button");
     menu.hidden ? (menu.hidden = false) : (menu.hidden = true);
@@ -91,7 +91,7 @@ function Navbar() {
                   >
                     Dashboard
                   </a>
-                  {user_role() === "patient" ? (
+                  {role === "patient" ? (
                     <a
                       href="/diary"
                       className={
@@ -119,13 +119,13 @@ function Navbar() {
                     href="#"
                     className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
                   >
-                    {isAuthenticated() ? "AUTHENTICATED" : "NOT"}
+                    {isAuthenticated ? "AUTHENTICATED" : "NOT"}
                   </a>
                   <a
                     href="#"
                     className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
                   >
-                    {user_role()}
+                    {role}
                   </a>
                 </div>
               </div>
@@ -178,7 +178,7 @@ function Navbar() {
                   tabIndex="-1"
                   id="user-menu-button"
                 >
-                  {isAuthenticated() ? (
+                  {isAuthenticated ? (
                     <>
                       <a
                         href="/profile"

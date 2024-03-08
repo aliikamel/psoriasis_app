@@ -4,9 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { ReactComponent as LogoWh } from "../assets/Logo-wh.svg";
 import { ReactComponent as LogoBl } from "../assets/Logo-bl.svg";
 import { useTheme } from "../context/ThemeContext";
-import { authenticate } from "../utils/authenticate";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
+  const { login } = useAuth();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const logo = theme === "dark" ? LogoBl : LogoWh;
@@ -37,9 +38,9 @@ function Login() {
         }
       );
       console.log("API Response:", response.data);
-      authenticate(response.data);
+      login(response.data);
       // Redirect to home page upon successful login
-      navigate('/');
+      navigate("/");
     } catch (error) {
       console.error("API Error:", error.response);
       // Handle error here (e.g., showing an error message)
@@ -47,8 +48,8 @@ function Login() {
   };
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+    <section className="bg-slate-100 dark:bg-gray-900 h-full">
+      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-full lg:py-0">
         <a
           href="/"
           className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white"
