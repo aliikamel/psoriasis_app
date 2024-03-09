@@ -1,7 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./Home";
-import Dashboard from "./Dashboard";
+import Dashboard from "./dermatologist/Dashboard";
+import Patients from "./dermatologist/Patients";
 import Login from "./Login";
 import Register from "./Register";
 import SimulateModel from "./SimulateModel";
@@ -26,6 +27,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patients"
+              element={
+                <PrivateRoute>
+                  <Patients />
                 </PrivateRoute>
               }
             />
