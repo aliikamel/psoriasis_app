@@ -4,6 +4,8 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx}",
     './public/index.html',
+    "./node_modules/tailwind-datepicker-react/dist/**/*.js",
+    'node_modules/flowbite-react/lib/esm/**/*.js'
   ],
   theme: {
     screens: {
@@ -64,6 +66,7 @@ module.exports = {
   },
   plugins: [
     require('@tailwindcss/forms'),
+    require('flowbite/plugin'),
   ],
 }
 
