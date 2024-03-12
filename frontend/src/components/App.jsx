@@ -3,9 +3,10 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./Home";
 import Dashboard from "./dermatologist/Dashboard";
 import Patients from "./dermatologist/Patients";
+import PatientDetails from "./dermatologist/PatientProfile";
+import SimulateModel from "./dermatologist/SimulateModel";
 import Login from "./Login";
 import Register from "./Register";
-import SimulateModel from "./SimulateModel";
 import Profile from "./Profile";
 import Navbar from "./Navbar";
 import { PrivateRoute } from "./PrivateRoute";
@@ -43,6 +44,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <SimulateModel />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patients/:patientId"
+              element={
+                <PrivateRoute>
+                  <PatientDetails />
                 </PrivateRoute>
               }
             />
