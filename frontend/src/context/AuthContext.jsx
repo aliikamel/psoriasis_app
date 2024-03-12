@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("accessToken", data.access);
     localStorage.setItem("refreshToken", data.refresh);
     localStorage.setItem("userRole", data.role);
+    localStorage.setItem("userId", data.id);
     setIsAuthenticated(true);
     setRole(data.role);
   };
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
     setIsAuthenticated(false);
     setRole("");
     // Redirect to login page or update the state to reflect the logout
