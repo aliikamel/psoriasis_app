@@ -13,8 +13,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Include additional response data here
         data['role'] = self.user.role
-
-        # You can print to see the output in console
-        print(data)
+        data['id'] = self.user.id
 
         return data

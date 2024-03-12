@@ -1,13 +1,23 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from .models import CustomUser, PatientProfile, DermatologistProfile, DermatologistPatientRelationship, PatientData
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'password', 'role']
+        fields = ['id', 'username', 'first_name', 'last_name', 'password', 'role', 'patient_profile', 'dermatologist_profile']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def get_patient_profile(self, obj):
+        if hasattr(obj, 'patient_profile'):  # Assuming there's a reverse relation named 'patientprofile'
+            profile = PatientProfile.objects.get(user=obj)
+            return PatientProfileSerializer(profile).data
+        elif hasattr(obj, 'dermatologist_profile'):  # Assuming there's a reverse relation named 'patientprofile'
+            profile = DermatologistProfile.objects.get(user=obj)
+            return DermatologistProfileSerializer(profile).data
+        return None
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):
@@ -15,7 +25,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PatientProfile
-        fields = ['user', 'dob', 'contact_number', 'address', 'medical_history']
+        fields = ['user', 'dob', 'contact_number', 'medical_history']
 
 
 class DermatologistProfileSerializer(serializers.ModelSerializer):
@@ -27,12 +37,47 @@ class DermatologistProfileSerializer(serializers.ModelSerializer):
 
 
 class DermatologistPatientRelationshipSerializer(serializers.ModelSerializer):
-    dermatologist = CustomUserSerializer(read_only=True)
-    patient = CustomUserSerializer(read_only=True)
+    dermatologist_id = serializers.IntegerField(write_only=True)
+    patient_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = DermatologistPatientRelationship
-        fields = ['dermatologist', 'patient']
+        fields = ['id', 'dermatologist_id', 'patient_id']
+
+    def to_representation(self, instance):
+        # Custom representation to return IDs directly
+        representation = super().to_representation(instance)
+        representation['dermatologist_id'] = instance.dermatologist.id
+        representation['patient_id'] = instance.patient.id
+        return representation
+
+    def validate(self, data):
+        # Check if the provided IDs correspond to existing users with correct roles
+        dermatologist = CustomUser.objects.filter(id=data['dermatologist_id'], role='dermatologist').first()
+        patient = CustomUser.objects.filter(id=data['patient_id'], role='patient').first()
+
+        if not dermatologist:
+            raise ValidationError("Dermatologist with provided ID does not exist or is not a dermatologist.")
+        if not patient:
+            raise ValidationError("Patient with provided ID does not exist or is not a patient.")
+
+        # Check for the existence of the relationship
+        existing_relationship = DermatologistPatientRelationship.objects.filter(dermatologist=dermatologist,
+                                                                                patient=patient).exists()
+        if existing_relationship:
+            raise ValidationError("This relationship already exists.")
+
+        return data
+
+    def create(self, validated_data):
+        dermatologist_id = validated_data.pop('dermatologist_id')
+        patient_id = validated_data.pop('patient_id')
+
+        dermatologist = CustomUser.objects.get(id=dermatologist_id)
+        patient = CustomUser.objects.get(id=patient_id)
+
+        relationship = DermatologistPatientRelationship.objects.create(dermatologist=dermatologist, patient=patient)
+        return relationship
 
 
 class PatientDataSerializer(serializers.ModelSerializer):
@@ -50,7 +95,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'password', 'role', 'dob', 'license_number', 'specialization']
+        fields = ['id', 'username', 'first_name', 'last_name', 'password', 'role', 'dob', 'license_number',
+                  'specialization']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
