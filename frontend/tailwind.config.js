@@ -5,7 +5,8 @@ module.exports = {
     "./src/**/*.{js,jsx}",
     './public/index.html',
     "./node_modules/tailwind-datepicker-react/dist/**/*.js",
-    'node_modules/flowbite-react/lib/esm/**/*.js'
+    'node_modules/flowbite-react/lib/esm/**/*.js',
+    "./node_modules/flowbite/**/*.js"
   ],
   theme: {
     screens: {
