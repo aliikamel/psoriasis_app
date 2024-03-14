@@ -1,13 +1,14 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from .models import CustomUser, PatientProfile, DermatologistProfile, DermatologistPatientRelationship, PatientData
+from .models import CustomUser, PatientProfile, DermatologistProfile, DermatologistPatientRelationship, PatientTreatment
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'first_name', 'last_name', 'password', 'role', 'patient_profile', 'dermatologist_profile']
+        fields = ['id', 'username', 'first_name', 'last_name', 'password', 'role', 'patient_profile',
+                  'dermatologist_profile']
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_patient_profile(self, obj):
@@ -20,12 +21,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return None
 
 
+class PatientTreatmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientTreatment
+        fields = '__all__'  # Add more fields as you define them in your model
+
+
 class PatientProfileSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer(read_only=True)
+    treatment = PatientTreatmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = PatientProfile
-        fields = ['user', 'dob', 'contact_number', 'medical_history']
+        fields = ['user', 'dob', 'contact_number', 'medical_history', 'treatment']
 
 
 class DermatologistProfileSerializer(serializers.ModelSerializer):
@@ -78,14 +86,6 @@ class DermatologistPatientRelationshipSerializer(serializers.ModelSerializer):
 
         relationship = DermatologistPatientRelationship.objects.create(dermatologist=dermatologist, patient=patient)
         return relationship
-
-
-class PatientDataSerializer(serializers.ModelSerializer):
-    patient_profile = PatientProfileSerializer(read_only=True)
-
-    class Meta:
-        model = PatientData
-        fields = ['patient_profile']  # Add more fields as you define them in your model
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

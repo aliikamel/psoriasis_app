@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models import JSONField
 
 
 class CustomUser(AbstractUser):
@@ -49,6 +50,21 @@ class DermatologistPatientRelationship(models.Model):
     # Add relationship-specific fields here
 
 
-class PatientData(models.Model):
-    patient_profile = models.ForeignKey(PatientProfile, on_delete=models.CASCADE)
-    # Add extensive patient data fields here
+class PatientTreatment(models.Model):
+    patient_profile = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='treatment')
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    treatment_type = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, default='not_started',
+                              choices=[('active', 'Active'), ('completed', 'Completed'),
+                                       ('not_started', 'Not Started')])
+    treatment_plan = JSONField()
+
+
+class SimulationResult(models.Model):
+    treatment = models.ForeignKey(PatientTreatment, on_delete=models.CASCADE, related_name='simulation_results')
+    simulation_date = models.DateField()
+    simulation_data = models.JSONField()  # Assuming you're using Django 3.1+
+
+    def __str__(self):
+        return f"Simulation on {self.simulation_date} for {self.treatment}"
