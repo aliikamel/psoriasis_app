@@ -2,10 +2,10 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import CustomUser, PatientProfile, DermatologistProfile, DermatologistPatientRelationship
+from .models import CustomUser, PatientProfile, DermatologistProfile, DermatologistPatientRelationship, PatientTreatment
 from .serializers import (CustomUserSerializer, PatientProfileSerializer,
                           DermatologistProfileSerializer, UserCreateSerializer,
-                          DermatologistPatientRelationshipSerializer)
+                          DermatologistPatientRelationshipSerializer, PatientTreatmentSerializer)
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -79,8 +79,11 @@ def get_patient_details_by_id(request):
     if patient_id is not None:
         # Assuming `user` is a ForeignKey in PatientProfile pointing to the user model
         patient_profile = PatientProfile.objects.get(user_id=patient_id)
-        serializer = PatientProfileSerializer(patient_profile)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if patient_profile:
+            serializer = PatientProfileSerializer(patient_profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
     else:
         return Response({"error": "Patient ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -107,3 +110,11 @@ class DermatologistProfileViewSet(viewsets.ModelViewSet):
     """
     serializer_class = DermatologistProfileSerializer
     queryset = DermatologistProfile.objects.all()
+
+
+class PatientTreatmentViewSet(viewsets.ModelViewSet):
+    """
+        A viewset for viewing and editing patient treatment.
+        """
+    serializer_class = PatientTreatmentSerializer
+    queryset = PatientTreatment.objects.all()
