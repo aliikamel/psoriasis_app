@@ -73,6 +73,33 @@ function PatientDetails() {
     setEditingTable(false);
     setEditableSessions({});
     setTreatmentPlan(updatedTreatmentPlan);
+    updatePatientTreatment(updatedTreatmentPlan);
+  };
+
+  const updatePatientTreatment = async (update_treatment_plan) => {
+    let treatment = patientDetails.treatment
+    treatment.treatment_plan = update_treatment_plan;
+    let formattedData = {
+      treatment: treatment
+    }
+
+    const cleanedTreatment = JSON.stringify(formattedData);
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8000/api/users/update-patient-treatment/`,
+        cleanedTreatment,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("API Response:", response.data);
+    } catch (error) {
+      console.log("API Response:", error);
+      setError("Error fetching data. Please try again.");
+    }
   };
 
   useEffect(() => {
