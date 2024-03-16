@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import JSONField
+from django.core.exceptions import ValidationError
 
 
 class CustomUser(AbstractUser):
@@ -51,14 +52,21 @@ class DermatologistPatientRelationship(models.Model):
 
 
 class PatientTreatment(models.Model):
-    patient_profile = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='treatment')
+    patient_profile = models.OneToOneField(PatientProfile, on_delete=models.CASCADE, related_name='treatment')
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
-    treatment_type = models.CharField(max_length=100)
+    treatment_type = models.CharField(max_length=100, default='UVB')
     status = models.CharField(max_length=20, default='not_started',
                               choices=[('active', 'Active'), ('completed', 'Completed'),
                                        ('not_started', 'Not Started')])
     treatment_plan = JSONField()
+
+    def clean(self):
+        """
+        Ensure that no more than one treatment is created per patient.
+        """
+        if PatientTreatment.objects.filter(patient_profile=self.patient_profile).exists():
+            raise ValidationError('A treatment instance for this patient already exists.')
 
 
 class SimulationResult(models.Model):
