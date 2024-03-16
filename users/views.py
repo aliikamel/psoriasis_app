@@ -8,6 +8,8 @@ from .serializers import (CustomUserSerializer, PatientProfileSerializer,
                           DermatologistPatientRelationshipSerializer, PatientTreatmentSerializer)
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
+import datetime
 
 
 @api_view(['POST'])
@@ -53,6 +55,96 @@ def create_patient_dermatologist_relationship(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['POST'])
+def create_patient_treatment(request):
+    body = request.data
+
+    # Extract the patient_profile_id from the request body
+    patient_profile_id = body['patient_profile_id']
+
+    # ensuring patient_profile exists first:
+    try:
+        patient_profile = PatientProfile.objects.get(id=patient_profile_id)
+    except PatientProfile.DoesNotExist:
+        return Response({"error": "Patient profile does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Extract the remaining data from the request body
+    treatment_start_date = datetime.datetime.strptime(body['start_date'], "%B %d, %Y").date()
+    num_of_weeks = int(body['num_of_weeks'])
+    weekly_sessions = int(body['weekly_sessions'])
+    minimal_erythema_dose = float(body['med'])
+    pasi_pre_treatment = float(body['pasi_pre_treatment'])
+
+    # Preparing data for creating a treatment instance
+    today = timezone.now().date()
+    treatment_status = 'active' if treatment_start_date <= today else 'not_started'
+
+    treatment_end_date = treatment_start_date + datetime.timedelta(weeks=num_of_weeks)
+
+    # Constructing treatment_plan object
+    treatment_plan = {
+        "WEEKLY_SESSIONS": weekly_sessions,
+        "PASI_PRE_TREATMENT": pasi_pre_treatment,
+        "WEEKS": []
+    }
+
+    uv_protocol = [0.7, 0.7, 0.98, 0.98, 1.323, 1.323, 1.72, 1.72, 2.15, 2.15,
+                   2.58, 2.58, 2.967, 2.967, 3.264, 3.264, 3.427, 3.427, 3.427, 3.427,
+                   3.427, 3.427, 3.427, 3.427, 3.427, 3.427, 3.427, 3.427, 3.427, 3.427]
+
+    sessions = 1
+    current_date = treatment_start_date
+    for week in range(1, num_of_weeks + 1):
+        week_dict = {}
+
+        for session_num in range(1, weekly_sessions + 1):
+            session_key = f"session_{sessions}"
+
+            # Set planned dose based on the above uv_protocol
+            if sessions <= len(uv_protocol):
+                planned_dose = round(minimal_erythema_dose * uv_protocol[sessions - 1], 2)
+            else:
+                planned_dose = round(minimal_erythema_dose * 3.427, 2)
+
+            actual_dose = ""
+            session_date = current_date.strftime("%d/%m/%Y")
+
+            week_dict[session_key] = {
+                "planned_dose": planned_dose,
+                "actual_dose": actual_dose,
+                "date": session_date
+            }
+
+            # Increment the current date by the interval between sessions within a week
+            # will increment 2 days for 3 weekly sessions and increment 3 days for 2 weekly sessions
+            sessions += 1
+            current_date += datetime.timedelta(days=(7 - 1) / 3)
+
+        # set current date to start at 1st day of the next week
+        current_date = treatment_start_date + datetime.timedelta(weeks=week)
+
+        # End of week processing
+        week_dict["end_week_pasi"] = ""
+        week_dict["status"] = ""
+        week_dict["uv_eff"] = ""
+        treatment_plan["WEEKS"].append(week_dict)
+
+    treatment_data = {
+        'patient_profile': patient_profile_id,
+        'start_date': treatment_start_date,
+        'end_date': treatment_end_date,
+        'status': treatment_status,
+        'treatment_plan': treatment_plan,
+    }
+
+    serializer = PatientTreatmentSerializer(data=treatment_data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET'])
 def get_patients_managed(request):
     # Get the dermatologist_id from query parameters
@@ -88,6 +180,7 @@ def get_patient_details_by_id(request):
         return Response({"error": "Patient ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# VIEWSET CLASSES
 class CustomUserViewSet(viewsets.ModelViewSet):
     """
     A viewset for viewing and editing patient profiles.
