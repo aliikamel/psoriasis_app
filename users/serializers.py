@@ -29,7 +29,7 @@ class PatientTreatmentSerializer(serializers.ModelSerializer):
 
 class PatientProfileSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer(read_only=True)
-    treatment = PatientTreatmentSerializer(many=True, read_only=True)
+    treatment = PatientTreatmentSerializer(read_only=True)
 
     class Meta:
         model = PatientProfile
