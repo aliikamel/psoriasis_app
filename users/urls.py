@@ -15,5 +15,6 @@ urlpatterns = [
     path('add-patient/', views.create_patient_dermatologist_relationship, name='create_patient_dermatologist_relationship'),
     path('get-patients-managed/', views.get_patients_managed, name='get_patients_managed'),
     path('get-patient-details/', views.get_patient_details_by_id, name='get_patients_details_by_id'),
-    path('create-patient-treatment/', views.create_patient_treatment, name='create_patient_treatment')
+    path('create-patient-treatment/', views.create_patient_treatment, name='create_patient_treatment'),
+    path('update-patient-treatment/', views.update_patient_treatment, name='update_patient_treatment')
 ]

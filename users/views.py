@@ -7,7 +7,7 @@ from .serializers import (CustomUserSerializer, PatientProfileSerializer,
                           DermatologistProfileSerializer, UserCreateSerializer,
                           DermatologistPatientRelationshipSerializer, PatientTreatmentSerializer)
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.utils import timezone
 import datetime
 
@@ -143,6 +143,32 @@ def create_patient_treatment(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def update_patient_treatment(request):
+    treatment = request.data['treatment']
+    try:
+        # Assuming 'id' is sent in the request to identify the PatientTreatment instance
+        treatment_id = treatment['id']
+
+        # Fetch the treatment instance to be updated
+        treatment_instance = get_object_or_404(PatientTreatment, id=treatment_id)
+
+        # Extract the new treatment_plan from the request
+        new_treatment_plan = treatment['treatment_plan']
+
+        if new_treatment_plan is not None:
+            # Update only the treatment_plan field
+            treatment_instance.treatment_plan = new_treatment_plan
+            treatment_instance.save()
+
+            return Response({'message': 'Treatment plan updated successfully.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No treatment plan provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except ValidationError as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
