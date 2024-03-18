@@ -179,7 +179,7 @@ function Patients() {
         <div
           hidden
           id="defaultModal"
-          tabindex="-1"
+          tabIndex="-1"
           aria-hidden="true"
           className="backdrop-blur-sm overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
         >
@@ -205,9 +205,9 @@ function Patients() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      fill-rule="evenodd"
+                      fillRule="evenodd"
                       d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clip-rule="evenodd"
+                      clipRule="evenodd"
                     ></path>
                   </svg>
                   <span className="sr-only">Close modal</span>
@@ -263,7 +263,7 @@ function Patients() {
                         <ul>
                           {searchResults.map((result) => (
                             <li
-                              key={result.username}
+                              key={`${result.username}`}
                               onClick={() => handlePatientChosen(result)}
                               className="p-2 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-50 text-sm font-medium font-sans border-b dark:border-gray-800"
                             >
@@ -281,7 +281,7 @@ function Patients() {
 
                   <div className="sm:col-span-2">
                     <label
-                      for="description"
+                      htmlFor="description"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Medical History/Notes
@@ -311,9 +311,9 @@ function Patients() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      fill-rule="evenodd"
+                      fillRule="evenodd"
                       d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                      clip-rule="evenodd"
+                      clipRule="evenodd"
                     ></path>
                   </svg>
                   Add Patient
@@ -325,7 +325,10 @@ function Patients() {
 
         <div className="grid grid-cols-4 gap-4 mb-4">
           {managedPatients.map((patient, index) => (
-            <div className="border-2 bg-white dark:bg-gray-800 rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72">
+            <div
+              key={`${index}_card`}
+              className="border-2 bg-white dark:bg-gray-800 rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"
+            >
               <div
                 className="flex relative justify-end px-4 pt-4"
                 onBlur={() =>

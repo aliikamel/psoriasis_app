@@ -69,7 +69,7 @@ def create_patient_treatment(request):
         return Response({"error": "Patient profile does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
     # Extract the remaining data from the request body
-    treatment_start_date = datetime.datetime.strptime(body['start_date'], "%B %d, %Y").date()
+    treatment_start_date = datetime.datetime.strptime(body['start_date'], "%d/%m/%Y").date()
     num_of_weeks = int(body['num_of_weeks'])
     weekly_sessions = int(body['weekly_sessions'])
     minimal_erythema_dose = float(body['med'])
