@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../Sidebar";
+import MyPlotComponent from "./MyPlotComponent";
 import { SidebarItem } from "../Sidebar";
 import {
   LayoutDashboard,
@@ -14,6 +15,8 @@ import {
   CirclePlus,
   X,
   Save,
+  Crosshair,
+  CirclePlay,
 } from "lucide-react";
 import profile from "../../assets/Profile.svg";
 import Datepicker from "tailwind-datepicker-react";
@@ -26,14 +29,54 @@ function PatientDetails() {
   const [error, setError] = useState("");
   const [showDate, setShowDate] = useState(false);
   const [editingTable, setEditingTable] = useState(false);
+  // this is for the quick editing functionality
   const [editableSessions, setEditableSessions] = useState({});
+  const [editableWeeks, setEditableWeeks] = useState({});
+  // the details of the selected session to be displayed in modal
+  const [openedSessionDetails, setOpenedSessionedDetails] = useState({});
+  const [uvEff, setUvEff] = useState({});
+  const [calculatingUvEff, setCalculatingUvEff] = useState(false);
+  const [simulationPlot, setSimulationPlot] = useState({});
+  const [simulatingModel, setSimulatingModel] = useState(false);
 
   const dateOptions = {
     inputPlaceholderProp: "Select Start Date",
+    language: "en-GB",
+    clearBtn: false,
+    inputDateFormatProp: {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    },
+  };
+
+  const formatDate = (date, join_char) => {
+    const d = new Date(date);
+    let month = "" + (d.getMonth() + 1),
+      day = "" + d.getDate(),
+      year = d.getFullYear();
+
+    if (month.length < 2) month = "0" + month;
+    if (day.length < 2) day = "0" + day;
+
+    return join_char === "/"
+      ? [day, month, year].join(join_char)
+      : [year, month, day].join(join_char);
   };
 
   const handleDateClose = (state) => {
     setShowDate(state);
+  };
+
+  const formatSessionString = (str) => {
+    // Split the string into parts based on the underscore
+    let parts = str.split("_");
+
+    // Capitalize the first letter of the first part
+    let word = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+
+    // Join the parts together with a space and return
+    return `${word} ${parts[1]}`;
   };
 
   const toggleEditMode = () => {
@@ -46,42 +89,189 @@ function PatientDetails() {
   };
 
   // Update editableSessions state upon input change
-  const handleSessionChange = (sessionKey, newValue) => {
-    setEditableSessions((prevState) => ({
+  const handleSessionChange = (sessionKey, rawValue, property) => {
+    // Only process if the property is actual_dose or planned_dose
+    if (property === "actual_dose" || property === "planned_dose") {
+      // Use a regular expression to validate the format: up to 2 digits before the decimal, up to 3 after
+      // This regex will match a valid number or an empty string, ensuring we don't process invalid formats
+      const validFormatRegex = /^(?:\d{0,2}(?:\.\d{0,3})?)?$/;
+
+      if (!validFormatRegex.test(rawValue)) {
+        return; // Don't update the state if the input is invalid
+      }
+
+      // If the input is valid, proceed to update the state
+      setEditableSessions((prevState) => ({
+        ...prevState,
+        [sessionKey]: {
+          ...prevState[sessionKey],
+          [property]: rawValue === "" ? "" : Number(rawValue),
+        },
+      }));
+    } else {
+      // For other properties, update the state without format validation
+      setEditableSessions((prevState) => ({
+        ...prevState,
+        [sessionKey]: {
+          ...prevState[sessionKey],
+          [property]: rawValue === "" ? "" : Number(rawValue),
+        },
+      }));
+    }
+  };
+
+  // Update editableWeeks state upon input change
+  const handleWeekChange = (week_index, newValue, property) => {
+    setEditableWeeks((prevState) => ({
       ...prevState,
-      [sessionKey]: newValue,
+      [week_index]: {
+        ...prevState[week_index],
+        [property]: newValue === "" ? "" : Number(newValue),
+      },
     }));
   };
 
-  const handleSaveSessionChanges = () => {
+  const handleSaveChanges = () => {
     setEditingTable(false);
 
     // Clone the current treatmentPlan to avoid direct state mutation
     let updatedTreatmentPlan = JSON.parse(JSON.stringify(treatmentPlan));
 
+    // Update sessions if any sessions have been edited
     Object.keys(editableSessions).forEach((sessionKey) => {
       updatedTreatmentPlan.WEEKS.forEach((week, weekIndex) => {
         if (sessionKey in week) {
-          // Update the actual dose for the session
-          updatedTreatmentPlan.WEEKS[weekIndex][sessionKey].planned_dose =
-            editableSessions[sessionKey];
+          const editableSession = editableSessions[sessionKey];
+          const session = week[sessionKey];
+
+          // Apply updates to session properties
+          if ("planned_dose" in editableSession) {
+            session.planned_dose = editableSession.planned_dose;
+          }
+          if ("actual_dose" in editableSession) {
+            session.actual_dose = editableSession.actual_dose;
+          }
+          if ("date" in editableSession) {
+            session.date = formatDate(editableSession.date, "/");
+          }
         }
       });
     });
 
-    // Now set the updated treatment plan in the state and clear editableSessions
-    setEditingTable(false);
+    // Update weeks if any pasi_end_week has been edited
+    Object.keys(editableWeeks).forEach((weekKey) => {
+      const weekIndex = parseInt(weekKey, 10); // Convert weekKey to a number
+      const weekUpdates = editableWeeks[weekKey];
+
+      // Ensure the week index is within range
+      if (weekIndex >= 0 && weekIndex < updatedTreatmentPlan.WEEKS.length) {
+        const week = updatedTreatmentPlan.WEEKS[weekIndex];
+        // Apply updates to week properties
+        if ("end_week_pasi" in weekUpdates) {
+          // only update if the value is a new value
+          if (week.end_week_pasi !== weekUpdates.end_week_pasi) {
+            console.log("Entered to remove uv_eff");
+            week.end_week_pasi = weekUpdates.end_week_pasi;
+            // in case end_week_pasi gets changed
+            week.uv_eff = "";
+          }
+        }
+        // Add more properties here later for status and such
+      }
+    });
+
+    // set weeks to complete or incomplete based on actual_dose and pasi_end_week being filled in
+    updatedTreatmentPlan.WEEKS.forEach((week, index) => {
+      const sessionKeys = Object.keys(week).filter((key) =>
+        key.startsWith("session_")
+      );
+
+      const weekCompleted = sessionKeys.every((sessionKey) => {
+        return week[sessionKey].actual_dose !== "" && week.end_week_pasi !== "";
+      });
+
+      if (weekCompleted) {
+        week.status = "completed";
+      } else {
+        week.status = "not_completed";
+        week.end_week_pasi = "";
+        week.uv_eff = "";
+      }
+    });
+
+    // If uvEff, set most recently complete week with that uv_eff
+    if (Object.keys(uvEff).length > 0) {
+      // Reverse loop through the weeks to find the last complete week
+      for (let i = updatedTreatmentPlan.WEEKS.length - 1; i >= 0; i--) {
+        const week = updatedTreatmentPlan.WEEKS[i];
+        if (week.status === "completed") {
+          week.uv_eff = uvEff.best_uv_eff;
+          break;
+        }
+
+        // const sessions = Object.values(week).filter(
+        //   (session) =>
+        //     session.hasOwnProperty("actual_dose") ||
+        //     session.hasOwnProperty("planned_dose")
+        // ); // Assuming each week object directly contains session objects
+
+        // // Check if all sessions in the week have an actual_dose defined
+        // const allSessionsCompleted = sessions.every(
+        //   (session) =>
+        //     session.actual_dose !== undefined && session.actual_dose !== ""
+        // );
+
+        // // Check if end_week_pasi is defined for the week
+        // const isEndWeekPasiDefined =
+        //   week.end_week_pasi !== undefined && week.end_week_pasi !== "";
+
+        // // If all sessions are completed and end_week_pasi is defined, this is the last complete week
+        // if (allSessionsCompleted && isEndWeekPasiDefined) {
+        //   week.uv_eff = uvEff.best_uv_eff;
+        //   break; // Exit the loop after updating the last complete week
+        // }
+      }
+    }
+
+    // Now set the updated treatment plan in the state and clear editableSessions and editableWeeks
     setEditableSessions({});
+    setEditableWeeks({});
+    console.log(updatedTreatmentPlan);
     setTreatmentPlan(updatedTreatmentPlan);
     updatePatientTreatment(updatedTreatmentPlan);
   };
 
+  const handleOpenSessionModal = (session_key, session_data) => {
+    setOpenedSessionedDetails({ [session_key]: session_data });
+  };
+
+  useEffect(() => {
+    // This useEffect reacts to changes in openedSessionDetails
+    if (Object.keys(openedSessionDetails).length > 0) {
+      toggleModal("edit_session_modal");
+    }
+  }, [openedSessionDetails]);
+
+  const getUpdatedDateOptions = (openedSessionDetails, existingOptions) => {
+    const sessionKey = Object.keys(openedSessionDetails)[0];
+    const sessionData = openedSessionDetails[sessionKey];
+    if (sessionData && sessionData.date) {
+      // Convert the date from "dd/mm/yyyy" to "yyyy-mm-dd"
+      const parts = sessionData.date.split("/");
+      const formattedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+
+      // Return the merged options
+      return { ...existingOptions, defaultDate: formattedDate };
+    }
+    return existingOptions;
+  };
+
   const updatePatientTreatment = async (update_treatment_plan) => {
-    let treatment = patientDetails.treatment
+    let treatment = patientDetails.treatment;
     treatment.treatment_plan = update_treatment_plan;
     let formattedData = {
-      treatment: treatment
-    }
+      treatment: treatment,
+    };
 
     const cleanedTreatment = JSON.stringify(formattedData);
 
@@ -98,40 +288,40 @@ function PatientDetails() {
       console.log("API Response:", response.data);
     } catch (error) {
       console.log("API Response:", error);
-      setError("Error fetching data. Please try again.");
+      setError("Error fetching data. Please try again THIS ONE.");
+    }
+  };
+
+  const fetchPatientDetails = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/api/users/get-patient-details/?patient_id=${patientId}`
+      );
+
+      setPatientDetails(response.data);
+      response.data.treatment &&
+        setTreatmentPlan(response.data.treatment.treatment_plan);
+      setIsLoading(false);
+      console.log(response.data);
+    } catch (err) {
+      setError("Failed to fetch patient details.");
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchPatientDetails = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:8000/api/users/get-patient-details/?patient_id=${patientId}`
-        );
-        setPatientDetails(response.data);
-        setTreatmentPlan(response.data.treatment.treatment_plan);
-        setIsLoading(false);
-        console.log(response.data);
-      } catch (err) {
-        setError("Failed to fetch patient details.");
-        setIsLoading(false);
-      }
-    };
-
     fetchPatientDetails();
   }, [patientId]);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-
-  const toggleModal = () => {
-    let modal = document.getElementById("defaultModal");
-    modal.hidden ? (modal.hidden = false) : (modal.hidden = true);
+  const toggleModal = (modal_id) => {
+    // ERROR IS COMING FROM HERE AS ELEMENT ISNT RENDERED YET on first click
+    let modal = document.getElementById(modal_id);
+    modal && (modal.hidden ? (modal.hidden = false) : (modal.hidden = true));
+    modal_id === "edit_session_modal" && setEditableSessions({});
   };
 
   const handleStartTreatment = async (e) => {
     e.preventDefault();
-    console.log(e);
     let data = e.target;
     let formattedData = {
       patient_profile_id: `${patientDetails.user.patient_profile}`,
@@ -156,11 +346,111 @@ function PatientDetails() {
         }
       );
       console.log("API Response:", response.data);
+      // close the modal and refetch the patient details
+      fetchPatientDetails();
+      toggleModal("create_treatment_modal");
     } catch (error) {
       console.log("API Response:", error);
       setError("Error fetching data. Please try again.");
     }
   };
+
+  const handleCalibrateUvEff = async () => {
+    const cleanedTreatmentPlan = JSON.stringify(treatmentPlan);
+    setCalculatingUvEff(true);
+
+    console.log(cleanedTreatmentPlan);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/model/fit-uv-eff/",
+        cleanedTreatmentPlan
+      );
+      console.log("API Response:", response.data);
+      setUvEff(response.data);
+
+      // Handle success here (e.g., showing a success message, redirecting, etc.)
+    } catch (error) {
+      console.error("API Error:", error.response);
+      // Handle error here (e.g., showing an error message)
+    }
+
+    setCalculatingUvEff(false);
+  };
+
+  useEffect(() => {
+    // Check if uvEff state is not empty
+    if (Object.keys(uvEff).length > 0) {
+      // If uvEff is not empty, call handleSaveChanges
+      handleSaveChanges();
+    }
+  }, [uvEff]); // Depend on uvEff to trigger this effect
+
+  const handleSimulateModel = async () => {
+    setSimulatingModel(true);
+    let uv_eff;
+    let treatment = patientDetails.treatment;
+    // Reverse loop through the weeks to find the last complete week
+    for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
+      const week = treatmentPlan.WEEKS[i];
+      if (week.uv_eff !== "") {
+        uv_eff = week.uv_eff;
+        break;
+      }
+    }
+
+    let full_data = { uv_eff: uv_eff, treatment: treatment };
+    let formattedData = JSON.stringify(full_data);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/model/simulate-model/",
+        formattedData
+      );
+      console.log("API Response:", response.data);
+      preparePlotData(response.data);
+
+      // Handle success here (e.g., showing a success message, redirecting, etc.)
+    } catch (error) {
+      console.error("API Error:", error.response);
+      // Handle error here (e.g., showing an error message)
+    }
+    setSimulatingModel(false);
+  };
+
+  const preparePlotData = (data) => {
+    let plot_data = {};
+
+    plot_data["x"] = data.x;
+    plot_data["y"] = data.y;
+
+    // Reverse loop through the weeks to find the last complete week
+    for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
+      const week = treatmentPlan.WEEKS[i];
+      if (week.uv_eff !== "") {
+        plot_data["curr_week"] = i + 1;
+        break;
+      }
+    }
+
+    let end_week_pasis = {};
+    treatmentPlan.WEEKS.forEach((week, index) => {
+      if (week.end_week_pasi !== "") {
+        end_week_pasis[index + 1] = week.end_week_pasi;
+      }
+    });
+
+    plot_data["end_week_pasis"] = end_week_pasis;
+
+    plot_data["pasi_pre_treatment"] = treatmentPlan.PASI_PRE_TREATMENT;
+    plot_data["weeks"] = treatmentPlan.WEEKS.length;
+
+    setSimulationPlot(plot_data);
+    console.log(plot_data);
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="flex h-mx">
@@ -185,6 +475,172 @@ function PatientDetails() {
         <SidebarItem icon={<Layers size={20} />} text="Tasks" />
       </Sidebar>
       <div className="w-full h-full p-4 pt-8">
+        {/* <!-- EDIT SESSION DETAILS MODAL --> */}
+        {Object.keys(openedSessionDetails).length > 0 && (
+          <div
+            hidden
+            id="edit_session_modal"
+            tabIndex="-1"
+            aria-hidden="true"
+            className="backdrop-blur-sm overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
+          >
+            <div className="relative p-4 w-full max-w-2xl h-full m-auto">
+              {/* <!-- Modal content --> */}
+              <div className="relative p-4 bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
+                {/* <!-- Modal header --> */}
+                <div className="flex justify-between items-center pb-4 mb-4 rounded-t border-b sm:mb-5 dark:border-gray-600">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {openedSessionDetails &&
+                      formatSessionString(Object.keys(openedSessionDetails)[0])}
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                    data-modal-toggle="defaultModal"
+                    onClick={() => toggleModal("edit_session_modal")}
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      ></path>
+                    </svg>
+                    <span className="sr-only">Close modal</span>
+                  </button>
+                </div>
+                {/* <!-- Modal body --> */}
+                <form onSubmit={handleSaveChanges}>
+                  <div className="grid gap-4 mb-4 sm:grid-cols-2">
+                    <div className="relative sm:col-span-2">
+                      <label
+                        htmlFor="date"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Session Date
+                      </label>
+                      <Datepicker
+                        key={`date-picker-${
+                          Object.keys(openedSessionDetails)[0]
+                        }`}
+                        options={getUpdatedDateOptions(
+                          openedSessionDetails,
+                          dateOptions
+                        )}
+                        show={showDate}
+                        setShow={handleDateClose}
+                        onChange={(newDateValue) =>
+                          handleSessionChange(
+                            Object.keys(openedSessionDetails)[0],
+                            formatDate(newDateValue, "-"),
+                            "date"
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 mb-4 sm:grid-cols-2">
+                    <div className="relative sm:col-span-1">
+                      <label
+                        htmlFor="planned_dose"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Planned Dose
+                      </label>
+                      <div>
+                        <input
+                          min={0}
+                          type="number"
+                          name="planned_dose"
+                          id="planned_dose"
+                          step="0.001"
+                          value={
+                            editableSessions[
+                              Object.keys(openedSessionDetails)[0]
+                            ] &&
+                            "planned_dose" in
+                              editableSessions[
+                                Object.keys(openedSessionDetails)[0]
+                              ]
+                              ? editableSessions[
+                                  Object.keys(openedSessionDetails)[0]
+                                ].planned_dose
+                              : openedSessionDetails[
+                                  Object.keys(openedSessionDetails)[0]
+                                ].planned_dose
+                          }
+                          onChange={(e) =>
+                            handleSessionChange(
+                              Object.keys(openedSessionDetails)[0],
+                              e.target.value,
+                              "planned_dose"
+                            )
+                          }
+                          className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="relative sm:col-span-1">
+                      <label
+                        htmlFor="actual_dose"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Actual Dose
+                      </label>
+                      <div>
+                        <input
+                          min={0}
+                          type="number"
+                          name="actual_dose"
+                          id="actual_dose"
+                          step="0.001"
+                          value={
+                            editableSessions[
+                              Object.keys(openedSessionDetails)[0]
+                            ] &&
+                            "actual_dose" in
+                              editableSessions[
+                                Object.keys(openedSessionDetails)[0]
+                              ]
+                              ? editableSessions[
+                                  Object.keys(openedSessionDetails)[0]
+                                ].actual_dose
+                              : openedSessionDetails[
+                                  Object.keys(openedSessionDetails)[0]
+                                ].actual_dose
+                          }
+                          onChange={(e) =>
+                            handleSessionChange(
+                              Object.keys(openedSessionDetails)[0],
+                              e.target.value,
+                              "actual_dose"
+                            )
+                          }
+                          className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      type="submit"
+                      className="inline-flex m-auto font-medium rounded-lg text-sm px-5 py-2.5 text-center text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-4 mb-4 h-auto md:h-full">
           {/* LEFT SIDE 2/3 */}
           <div className="col-span-2">
@@ -244,10 +700,11 @@ function PatientDetails() {
                               />
                             )}
                           </button>
-                          {Object.keys(editableSessions).length > 0 &&
+                          {(Object.keys(editableSessions).length > 0 ||
+                            Object.keys(editableWeeks).length > 0) &&
                             editingTable && (
                               <button
-                                onClick={handleSaveSessionChanges}
+                                onClick={handleSaveChanges}
                                 className="w-auto m-2 ml-auto inline-flex items-center font-medium rounded-lg text-sm px-3 py-2.5 text-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 focus:ring-gray-300 text-white focus:outline-none focus:ring-4 dark:focus:ring-gray-800"
                               >
                                 <Save
@@ -265,7 +722,7 @@ function PatientDetails() {
                         (_, session_index) => (
                           <tr
                             key={`session_row_${session_index + 1}`}
-                            className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
                           >
                             <th
                               scope="row"
@@ -284,7 +741,9 @@ function PatientDetails() {
                               (_, weekIndex) => {
                                 // Calculate the global session number
                                 const sessionNumber =
-                                  weekIndex * 3 + session_index + 1;
+                                  weekIndex * treatmentPlan.WEEKLY_SESSIONS +
+                                  session_index +
+                                  1;
                                 // Construct the session key (e.g., "session_1", "session_2", ...)
                                 const sessionKey = `session_${sessionNumber}`;
                                 // Access the session data dynamically from the WEEKS object
@@ -301,33 +760,63 @@ function PatientDetails() {
                                     className="p-2"
                                   >
                                     {sessionData.actual_dose === "" ? (
+                                      /* dark:hover:bg-blue-700 cursor:pointer */
+                                      editingTable ? (
+                                        <input
+                                          step="0.001"
+                                          className={
+                                            "w-16 text-center rounded-md border border-gray-300 text-gray-900 sm:text-sm dark:bg-gray-500 bg-gray-200 hover:bg-blue-50 dark:border-gray-600 dark:placeholder-gray-200 dark:text-white"
+                                          }
+                                          type="number"
+                                          value={
+                                            editableSessions[sessionKey] &&
+                                            "planned_dose" in
+                                              editableSessions[sessionKey]
+                                              ? editableSessions[sessionKey]
+                                                  .planned_dose
+                                              : sessionData.planned_dose
+                                          }
+                                          onChange={(e) =>
+                                            handleSessionChange(
+                                              sessionKey,
+                                              e.target.value,
+                                              "planned_dose"
+                                            )
+                                          }
+                                        />
+                                      ) : (
+                                        <button
+                                          onClick={() =>
+                                            handleOpenSessionModal(
+                                              sessionKey,
+                                              sessionData
+                                            )
+                                          }
+                                          className="w-16 py-2 rounded-md border border-gray-300 text-gray-900 sm:text-sm bg-gray-50 hover:bg-gray-200 dark:bg-gray-700 hover:dark:bg-gray-500 dark:border-gray-600 dark:placeholder-gray-200 dark:text-white"
+                                        >
+                                          {sessionData.planned_dose || "-"}
+                                        </button>
+                                      )
+                                    ) : editingTable ? (
                                       <input
-                                        disabled={!editingTable}
-                                        className={`w-16 rounded-md border border-gray-300 text-gray-900 sm:text-sm ${
-                                          editingTable
-                                            ? "dark:bg-gray-500 bg-gray-200"
-                                            : "dark:bg-gray-700 bg-gray-50"
-                                        } dark:border-gray-600 dark:placeholder-gray-200 dark:text-white`}
-                                        type="text"
-                                        value={
-                                          editingTable
-                                            ? editableSessions[sessionKey]
-                                            : sessionData.planned_dose
-                                        }
-                                        onChange={(e) =>
-                                          handleSessionChange(
-                                            sessionKey,
-                                            e.target.value
-                                          )
-                                        }
-                                      />
-                                    ) : (
-                                      <input
+                                        step="0.001"
                                         disabled
-                                        className="w-16 font-bold rounded-md bg-blue-500 border border-gray-300 text-gray-50 sm:text-sm dark:bg-blue-500 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white"
-                                        type="text"
+                                        className="w-16 text-center font-bold rounded-md bg-blue-500 border border-gray-300 text-gray-50 sm:text-sm dark:bg-blue-500 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white"
+                                        type="number"
                                         value={sessionData.actual_dose}
                                       />
+                                    ) : (
+                                      <button
+                                        onClick={() =>
+                                          handleOpenSessionModal(
+                                            sessionKey,
+                                            sessionData
+                                          )
+                                        }
+                                        className="w-16 py-2 font-bold rounded-md bg-blue-500 border border-gray-300 text-gray-50 sm:text-sm dark:bg-blue-500 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white"
+                                      >
+                                        {sessionData.actual_dose}
+                                      </button>
                                     )}
                                   </td>
                                 );
@@ -343,6 +832,81 @@ function PatientDetails() {
                         >
                           End of week PASI
                         </th>
+                        {treatmentPlan.WEEKS.map((week, index) => {
+                          // Filter out session keys from the week object
+                          const sessionKeys = Object.keys(week).filter((key) =>
+                            key.startsWith("session_")
+                          );
+
+                          // Check if all sessions in the week are completed (i.e., have a non-empty actual_dose)
+                          const allSessionsCompleted = sessionKeys.every(
+                            (sessionKey) => {
+                              return week[sessionKey].actual_dose !== "";
+                            }
+                          );
+
+                          return (
+                            <td
+                              key={`end_of_week_${index + 1}_pasi`}
+                              className="p-2"
+                            >
+                              {allSessionsCompleted ? (
+                                // If all sessions in the week are completed, render an input or any other element
+                                editingTable ? (
+                                  <input
+                                    step="0.001"
+                                    className="w-16 text-center font-bold rounded-md bg-blue-500 border border-gray-300 text-gray-50 sm:text-sm dark:bg-gray-900 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white"
+                                    type="number"
+                                    onChange={(e) =>
+                                      handleWeekChange(
+                                        index,
+                                        e.target.value,
+                                        "end_week_pasi"
+                                      )
+                                    }
+                                    value={
+                                      editableWeeks[index] &&
+                                      "end_week_pasi" in editableWeeks[index]
+                                        ? editableWeeks[index].end_week_pasi
+                                        : week.end_week_pasi
+                                    }
+                                  />
+                                ) : (
+                                  <button className="w-16 py-2 font-bold rounded-md bg-gray-500 border border-gray-300 text-gray-50 sm:text-sm dark:bg-gray-900 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white">
+                                    {week.end_week_pasi || "-"}
+                                  </button>
+                                )
+                              ) : (
+                                <></>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                      <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <th
+                          scope="row"
+                          className="px-6 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                        >
+                          UV Efficacy
+                        </th>
+                        {treatmentPlan.WEEKS.map((week, index) => {
+                          return (
+                            <td
+                              className="p-2"
+                              key={`week_${index + 1}_uv_eff`}
+                            >
+                              {week.uv_eff && (
+                                <button
+                                  disabled
+                                  className="w-16 py-2 font-bold rounded-md bg-white border border-gray-300 text-gray-700 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white"
+                                >
+                                  {week.uv_eff}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
                       </tr>
                     </tbody>
                   </table>
@@ -351,7 +915,7 @@ function PatientDetails() {
             ) : (
               <div className="flex flex-col items-center justify-center p-8 border-2 bg-white dark:bg-gray-800 rounded-lg border-gray-300 dark:border-gray-600 h-64 mb-4 shadow-md">
                 <button
-                  onClick={toggleModal}
+                  onClick={() => toggleModal("create_treatment_modal")}
                   className={
                     "w-1/3 inline-flex items-center justify-center font-medium rounded-lg text-sm px-3 py-2.5 text-center bg-blue-700 hover:bg-blue-600 focus:ring-blue-300 text-white focus:outline-none focus:ring-4 dark:focus:ring-blue-800"
                   }
@@ -362,11 +926,11 @@ function PatientDetails() {
                   </h5>
                 </button>
 
-                {/* <!-- Main modal --> */}
+                {/* <!-- CREATE TREATMENT MODAL --> */}
                 <div
                   hidden
-                  id="defaultModal"
-                  tabindex="-1"
+                  id="create_treatment_modal"
+                  tabIndex="-1"
                   aria-hidden="true"
                   className="backdrop-blur-sm overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
                 >
@@ -382,7 +946,7 @@ function PatientDetails() {
                           type="button"
                           className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
                           data-modal-toggle="defaultModal"
-                          onClick={toggleModal}
+                          onClick={() => toggleModal("create_treatment_modal")}
                         >
                           <svg
                             aria-hidden="true"
@@ -392,9 +956,9 @@ function PatientDetails() {
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
-                              fill-rule="evenodd"
+                              fillRule="evenodd"
                               d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clip-rule="evenodd"
+                              clipRule="evenodd"
                             ></path>
                           </svg>
                           <span className="sr-only">Close modal</span>
@@ -430,7 +994,8 @@ function PatientDetails() {
                             <select
                               required
                               id="weekly_sessions"
-                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              name="weekly_sessions"
+                              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             >
                               <option value="" disabled selected>
                                 Select option
@@ -439,19 +1004,6 @@ function PatientDetails() {
                               <option value="2">2</option>
                               <option value="3">3 (default)</option>
                             </select>
-                            {/* <div>
-                              <input
-                                required
-                                min={1}
-                                max={7}
-                                type="number"
-                                name="weekly_sessions"
-                                id="weekly_sessions"
-                                pattern="[0-9]"
-                                defaultValue={3}
-                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                              />
-                            </div> */}
                           </div>
                           <div className="relative sm:col-span-1">
                             <label
@@ -462,8 +1014,9 @@ function PatientDetails() {
                             </label>
                             <select
                               required
+                              name="treatment_duration"
                               id="treatment_duration"
-                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             >
                               <option value="" disabled selected>
                                 Select number of weeks
@@ -471,19 +1024,6 @@ function PatientDetails() {
                               <option value="8">8 Weeks</option>
                               <option value="12">12 Weeks (default)</option>
                             </select>
-                            {/* <div>
-                              <input
-                                required
-                                min={2}
-                                max={24}
-                                type="number"
-                                name="num-of-weeks"
-                                id="num-of-weeks"
-                                pattern="[0-9]"
-                                defaultValue={12}
-                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                              />
-                            </div> */}
                           </div>
                         </div>
                         <div className="grid gap-4 mb-4 sm:grid-cols-2">
@@ -496,12 +1036,12 @@ function PatientDetails() {
                             </label>
                             <div>
                               <input
+                                step="0.001"
                                 required
                                 min={0}
                                 type="number"
                                 name="med"
                                 id="med"
-                                step="any"
                                 className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                               />
                             </div>
@@ -515,12 +1055,12 @@ function PatientDetails() {
                             </label>
                             <div>
                               <input
+                                step="0.001"
                                 required
                                 min={0}
                                 type="number"
                                 name="pasi_pre_treatment"
                                 id="pasi_pre_treatment"
-                                step="any"
                                 className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                               />
                             </div>
@@ -538,6 +1078,12 @@ function PatientDetails() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {Object.keys(simulationPlot).length > 0 && (
+              <div className="p-6 border-2 bg-white dark:bg-gray-800 gap-2 flex flex-col justify-center rounded-lg border-gray-300 dark:border-gray-700 rounded-lg h-auto md:h-auto mb-4">
+                <MyPlotComponent plotData={simulationPlot} />
               </div>
             )}
           </div>
@@ -595,13 +1141,127 @@ function PatientDetails() {
                 </p>
               </div>
             </div>
-
-            <div className="gap-2 p-6 flex border-2 bg-white dark:bg-gray-800 items-center rounded-lg border-gray-300 dark:border-gray-600 h-72 mb-4">
-              <h5 className="mb-1 text-xl font-medium text-gray-900 dark:text-white">
-                Here Will put the Re-calibrate UV Efficacy Parameter and Model
-                Simulate button
-              </h5>
-            </div>
+            {treatmentPlan && (
+              <div className="p-6 flex flex-col border-2 bg-white dark:bg-gray-800 items-center rounded-lg border-gray-300 dark:border-gray-600 h-auto mb-4">
+                {treatmentPlan.WEEKS.map((week, index) => {
+                  if (week.status === "completed") {
+                    return (
+                      <div
+                        key={`week_${index + 1}_status`}
+                        className="flex w-full p-2 justify-center"
+                      >
+                        <p className="p-2 text-xl font-medium text-gray-900 dark:text-white">{`Week ${
+                          index + 1
+                        } Completed `}</p>
+                      </div>
+                    );
+                  } else {
+                    return <></>;
+                  }
+                })}
+                {treatmentPlan.WEEKS.some(
+                  (week) => week.status === "completed"
+                ) ? (
+                  <div className="flex w-full p-2 justify-center">
+                    {calculatingUvEff ? (
+                      <div
+                        className="flex justify-center text-center py-2 px-20 rounded-lg dark:bg-blue-600"
+                        role="status"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          className="w-8 h-8 text-gray-700 animate-spin dark:text-gray-50 fill-gray-600"
+                          viewBox="0 0 100 101"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                            fill="currentFill"
+                          />
+                        </svg>
+                        <span className="sr-only">Loading...</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleCalibrateUvEff}
+                        className="inline-flex items-center font-medium rounded-lg text-lg px-5 py-2.5 text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300"
+                      >
+                        <Crosshair size={18} className="mr-2" />
+                        Calibrate UV-Efficacy
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="p-2 mr-2 text-xl font-medium text-gray-900 dark:text-white">
+                    Complete a week by inputting an{" "}
+                    <span className="font-bold bg-gray-200 dark:bg-gray-600 rounded-lg px-2 py-1">
+                      End of week PASI
+                    </span>{" "}
+                    value
+                  </p>
+                )}
+              </div>
+            )}
+            {/* ONLY RENDER IF THERE IS A UV_EFF VALUE INPUTTED */}
+            {treatmentPlan &&
+              treatmentPlan.WEEKS.some((week) => week.uv_eff !== "") && (
+                <div className="p-6 flex flex-col border-2 bg-white dark:bg-gray-800 items-center rounded-lg border-gray-300 dark:border-gray-600 h-auto mb-4">
+                  {treatmentPlan.WEEKS.map((week, index) => {
+                    if (week.uv_eff !== "") {
+                      return (
+                        <div key={`week_${index + 1}_summary`}>
+                          <p className="p-2 mr-2 text-xl font-medium text-gray-900 dark:text-white">
+                            {`Week ${index + 1}: UV Efficacy `}
+                            <span className="font-bold bg-gray-200 dark:bg-gray-600 rounded-lg px-2 py-1">
+                              {week.uv_eff}
+                            </span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return <></>;
+                  })}
+                  <div>
+                    {simulatingModel ? (
+                      <div
+                        className="flex justify-center text-center py-2 px-20 rounded-lg dark:bg-blue-600"
+                        role="status"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          className="w-8 h-8 text-gray-700 animate-spin dark:text-gray-50 fill-gray-600"
+                          viewBox="0 0 100 101"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                            fill="currentFill"
+                          />
+                        </svg>
+                        <span className="sr-only">Loading...</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleSimulateModel}
+                        className="inline-flex items-center font-medium rounded-lg text-lg px-5 py-2.5 text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300"
+                      >
+                        <CirclePlay size={24} className="mr-2" />
+                        Simulate Model
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -611,17 +1271,16 @@ function PatientDetails() {
 
 export default PatientDetails;
 
-// {
-//   /*
+/* //   
 //           <div className="border-2 bg-white dark:bg-gray-800  rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-96"></div>
 //           <div className="col-span-3 border-2 bg-white dark:bg-gray-800  rounded-lg border-gray-300 dark:border-gray-600 h-96"></div> */
-// }
-// {
-//   /* <div className="grid grid-cols-3 gap-4 mb-4">
+//
+//
+//    <div className="grid grid-cols-3 gap-4 mb-4">
 //           <div className="col-span-2 border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
 //           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
 //           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
 //           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
 //           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
-//         </div> */
-// }
+//         </div>
+//  */}
