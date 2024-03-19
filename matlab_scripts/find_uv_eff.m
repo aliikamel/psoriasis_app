@@ -1,10 +1,9 @@
-function [uv_eff, sim_data] = fit_uv_eff(data, model)
+function [uv_eff] = find_uv_eff(data, model)
 
 model = sbmlimport(model);
 
-% importing the data from an XLSX file
-data = readtable(data);
-%data = struct2table(data);
+% structuring data to table
+data = struct2table(data);
 
 % times when PASI values are recorded
 time_pasis = [];
@@ -23,9 +22,6 @@ for i=1:11
     time_doses = [time_doses cur_doses_time];
     cur_doses_time = cur_doses_time + 7;
 end
-
-% data_ids = [3, 15, 5, 11];
-%data_ids = [1];
 
 
 % extracting PASI trajectories        
@@ -141,11 +137,5 @@ for k=1:length(data.ID)
     disp(['Best UVB EFF ' num2str(best_uv_eff) '; Best Error = ' num2str(sum(abs(best_err)))]);
 
     uv_eff = [best_uv_eff];
-
-    % simulating the model with the best UVB efficacy parameter
-    model = sbml_set_parameter_value(model, "uv_eff", best_uv_eff);
-
-    sim_data = model_sim(model, stop_time); 
-        
 end
 
