@@ -4,8 +4,10 @@ from rest_framework.response import Response
 import matlab.engine
 import os
 import pandas as pd
-from django.http import QueryDict
+from django.http import QueryDict, JsonResponse
 import json
+from rest_framework import status
+import plotly.graph_objects as go
 
 
 @api_view(['POST'])  # Change to POST to accept form data
@@ -86,6 +88,198 @@ def run_model(request):
         'sim_data_names': sim_data_names,
         'sim_data': sim_data_python
     })
+
+
+@api_view(['POST'])  # Change to POST to accept form data
+def fit_uv_eff(request):
+    data_received = request.body.decode('utf-8')
+    data_dict = json.loads(data_received)
+
+    if data_dict['WEEKS']:
+        # Starting the MATLAB engine
+        eng = matlab.engine.start_matlab()
+
+        # Pre-fill the data structure with np.nan for all expected fields
+        pre_filled_data = {
+            "ID": [0],
+            "PASI_PRE_TREATMENT": [data_dict['PASI_PRE_TREATMENT']],
+            **{f"PASI_END_WEEK_{i + 1}": [np.nan if week.get('end_week_pasi', '') == '' else week.get('end_week_pasi')]
+               for i, week in enumerate(data_dict['WEEKS'])},
+            "LAST_FU_PASI": [np.nan],
+            "LAST_FU_MONTH": [np.nan],
+            "UVB_DOSE_TOTAL": [0],
+            "UV_EFF_W_12": [0]
+        }
+
+        uvb_dose_total = 0
+        for i in range(1, len(data_dict['WEEKS']) * data_dict['WEEKLY_SESSIONS']):
+            # Initialize with np.nan, will replace if session data is found
+            uvb_dose_key = f"UVB_DOSE_{i}"
+            pre_filled_data[uvb_dose_key] = [np.nan]
+
+            # Loop through each week to find the corresponding session
+            for week in data_dict['WEEKS']:
+                session_key = f"session_{i}"
+                if session_key in week:
+                    session = week[session_key]
+                    # If actual_dose is present and not an empty string, use it
+                    if 'actual_dose' in session and session['actual_dose'] != "":
+                        uvb_dose_total += session['actual_dose']
+                        pre_filled_data[uvb_dose_key] = [session['actual_dose']]
+                        break  # Found the session, no need to check further
+                    # # If planned_dose is present and not an empty string, use it
+                    # elif 'planned_dose' in session and session['planned_dose'] != "":
+                    #     pre_filled_data[uvb_dose_key] = [session['planned_dose']]
+                    #     break  # Found the session, no need to check further
+                    # # If neither actual_dose nor planned_dose is present, np.nan is already set
+
+        pre_filled_data['UVB_DOSE_TOTAL'] = [uvb_dose_total]
+
+        for key, value in pre_filled_data.items():
+            pre_filled_data[key] = matlab.double(pre_filled_data[key])
+
+        data_struct = eng.struct(pre_filled_data)
+
+        # Define paths
+        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_v8_4.xml')
+        sbml_model_path_matlab = eng.char(sbml_model_path)
+
+        # Add MATLAB scripts directory to MATLAB engine's path
+        matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
+        eng.addpath(matlab_scripts_path, nargout=0)
+
+        # Call the MATLAB function
+        best_uv_eff = eng.find_uv_eff(data_struct, sbml_model_path_matlab, nargout=1)
+
+        print(pre_filled_data)
+
+        # Quit MATLAB engine
+        eng.quit()
+        return Response({"best_uv_eff": best_uv_eff}, status=status.HTTP_200_OK)
+    else:
+        return Response("Treatment Plan Empty", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])  # Change to POST to accept form data
+def simulate_model(request):
+    data = json.loads(request.body.decode('utf-8'))
+    treatment = data['treatment']
+    uv_eff = data['uv_eff']
+    # uv_eff = matlab.double(uv_eff)
+    print(uv_eff)
+    # Starting the MATLAB engine
+    eng = matlab.engine.start_matlab()
+
+    # Define paths
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_v8_4.xml')
+    sbml_model_path_matlab = eng.char(sbml_model_path)
+
+    # Add MATLAB scripts directory to MATLAB engine's path
+    matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
+    eng.addpath(matlab_scripts_path, nargout=0)
+
+    # Call the MATLAB function
+    model_sim = eng.simulate_model(uv_eff, sbml_model_path_matlab, nargout=1)
+
+    # Access the Data and DataNames from the struct
+    sim_data = model_sim['Data']
+    sim_data_names = model_sim['DataNames']
+    sim_data_time = model_sim['Time']
+
+    # sim_data and sim_data_time likely MATLAB double arrays; convert them to Python list
+    sim_data_python = [list(row) for row in sim_data]
+    sim_data_time_python = [list(row) for row in sim_data_time]
+
+    sim_data_time_python_flat = [item for sublist in sim_data_time_python for item in sublist]
+
+    # sim_data_names is a MATLAB cell array; convert it to a Python list
+    sim_data_names_python = [str(name) for name in sim_data_names]
+
+    # Convert the list of lists into a DataFrame
+    df = pd.DataFrame(sim_data_python, columns=sim_data_names_python)
+
+    # Now you can directly add it to your DataFrame as a new column
+    df['Time'] = sim_data_time_python_flat
+
+    print(df.head())
+
+    # If you want to select specific columns ('PASI' and 'Time') and send them back
+    selected_data = df[['PASI', 'Time']].to_dict(orient='list')
+
+    # Quit MATLAB engine
+    eng.quit()
+
+
+
+    # # Generate the plot
+    sim_data_time = df['Time'].tolist()  # Extract simulated time points
+    sim_data_pasi = df['PASI'].tolist()  # Extract simulated PASI values
+
+    # Example of modifying the backend endpoint to return plot data
+    return Response({
+        'x': sim_data_time,  # or your specific logic for time
+        'y': sim_data_pasi,  # or your specific logic for PASI values
+    })
+
+    #
+    # # Assuming you have actual PASI measurements at the same time points
+    # # If not, you'll need to adjust `time_pasis` and `pasis` accordingly based on your data structure
+    # time_pasis = sim_data_time
+    # pasis = [week['end_week_pasi'] for week in treatment['treatment_plan']['WEEKS'] if week['end_week_pasi'] != '']
+    #
+    # patient_id = treatment['patient_profile']  # Define this based on your actual data or input
+    #
+    # # # Now call the plot function with these formatted parameters
+    # print(uv_eff)
+    # print(type(uv_eff))
+    # uv_eff = convert_matlab_double_to_python(uv_eff)
+    # print(uv_eff[0][0])
+    # plot_div = generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff[0][0], patient_id)
+
+    # Include the plot div in your response
+    # return JsonResponse({'plot': plot_div})
+
+
+def generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff, patient_id):
+    # Convert sim_data_time from simulated time points to weeks
+    adjusted_sim_data_time = [(time_point - 300) / 7 for time_point in sim_data_time]
+
+    # Assuming pasis list contains the actual PASI measurements at respective time points
+    # Ensure all PASI values are floats
+    pasis_float = [float(pasi) for pasi in pasis]
+
+    # Create the plot
+    fig = go.Figure()
+
+    # Plotting the simulated PASI trajectory
+    fig.add_trace(
+        go.Scatter(x=adjusted_sim_data_time, y=sim_data_pasi, mode='lines', name='Model Simulation',
+                   line=dict(color='black', width=8)))
+
+    # Plotting the PASI data points
+    # Adjust time_pasis if necessary, similar to sim_data_time
+    adjusted_time_pasis = [(time_point - 300) / 7 for time_point in time_pasis]
+    fig.add_trace(go.Scatter(x=adjusted_time_pasis, y=pasis_float, mode='markers', name='Actual PASI',
+                             marker=dict(color='red', size=20, symbol='x')))
+
+    # Updating layout with your requirements
+    fig.update_layout(
+        title=f'ID = {patient_id}, UVB sensitivity = {uv_eff:.3f}',
+        xaxis_title='Time (weeks)',
+        yaxis_title='PASI',
+        font=dict(family="Arial", size=48),
+        xaxis=dict(range=[-0.5, max(adjusted_sim_data_time)+0.5]), # Adjusted to show full range based on simulated time
+        yaxis=dict(range=[min(pasis_float) * 0.9, max(pasis_float) * 1.1]), # Dynamically adjust y-axis range based on PASI values
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+    )
+
+    # For frontend integration, convert plot to HTML div
+    plot_div = fig.to_html(full_html=False)
+
+    return plot_div
+
 
 
 @api_view(['GET'])
