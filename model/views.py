@@ -8,6 +8,7 @@ from django.http import QueryDict, JsonResponse
 import json
 from rest_framework import status
 import plotly.graph_objects as go
+import datetime
 
 
 @api_view(['POST'])  # Change to POST to accept form data
@@ -100,22 +101,25 @@ def fit_uv_eff(request):
         eng = matlab.engine.start_matlab()
 
         # Pre-fill the data structure with np.nan for all expected fields
-        pre_filled_data = {
-            "ID": [0],
-            "PASI_PRE_TREATMENT": [data_dict['PASI_PRE_TREATMENT']],
-            **{f"PASI_END_WEEK_{i + 1}": [np.nan if week.get('end_week_pasi', '') == '' else week.get('end_week_pasi')]
-               for i, week in enumerate(data_dict['WEEKS'])},
-            "LAST_FU_PASI": [np.nan],
-            "LAST_FU_MONTH": [np.nan],
-            "UVB_DOSE_TOTAL": [0],
-            "UV_EFF_W_12": [0]
-        }
+        # pre_filled_data = {
+        #     "ID": [0],
+        #     "PASI_PRE_TREATMENT": [data_dict['PASI_PRE_TREATMENT']],
+        #     **{f"PASI_END_WEEK_{i + 1}": [np.nan if week.get('end_week_pasi', '') == '' else week.get('end_week_pasi')]
+        #        for i, week in enumerate(data_dict['WEEKS'])},
+        #     "LAST_FU_PASI": [np.nan],
+        #     "LAST_FU_MONTH": [np.nan],
+        #     "UVB_DOSE_TOTAL": [0],
+        #     "UV_EFF_W_12": [0]
+        # }
 
-        uvb_dose_total = 0
+        # Assuming data_dict is your treatment plan data structure
+        pasi_pre_treatment_date = datetime.datetime.strptime(data_dict['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
+        treatment_start_date = datetime.datetime.strptime(data_dict['TREATMENT_START_DATE'], "%d/%m/%Y").date()
+
+        # Creating uvb_doses list
+        uvb_doses = []
         for i in range(1, len(data_dict['WEEKS']) * data_dict['WEEKLY_SESSIONS']):
-            # Initialize with np.nan, will replace if session data is found
-            uvb_dose_key = f"UVB_DOSE_{i}"
-            pre_filled_data[uvb_dose_key] = [np.nan]
+            uvb_doses.append(np.nan)
 
             # Loop through each week to find the corresponding session
             for week in data_dict['WEEKS']:
@@ -124,25 +128,83 @@ def fit_uv_eff(request):
                     session = week[session_key]
                     # If actual_dose is present and not an empty string, use it
                     if 'actual_dose' in session and session['actual_dose'] != "":
-                        uvb_dose_total += session['actual_dose']
-                        pre_filled_data[uvb_dose_key] = [session['actual_dose']]
+                        # uvb_doses[i - 1] = session['actual_dose']
+                        uvb_doses[i - 1] = matlab.double(session['actual_dose'])
                         break  # Found the session, no need to check further
-                    # # If planned_dose is present and not an empty string, use it
-                    # elif 'planned_dose' in session and session['planned_dose'] != "":
-                    #     pre_filled_data[uvb_dose_key] = [session['planned_dose']]
-                    #     break  # Found the session, no need to check further
-                    # # If neither actual_dose nor planned_dose is present, np.nan is already set
 
-        pre_filled_data['UVB_DOSE_TOTAL'] = [uvb_dose_total]
+        # Creating PASIs list
+        pasis = [matlab.double(data_dict['PASI_PRE_TREATMENT'])]
+        for i in range(0, len(data_dict['WEEKS'])):
+            pasis.append(np.nan)
 
-        for key, value in pre_filled_data.items():
-            pre_filled_data[key] = matlab.double(pre_filled_data[key])
+            if data_dict['WEEKS'][i]['end_week_pasi'] != "":
+                # pasis[i+1] = data_dict['WEEKS'][i]['end_week_pasi']
+                pasis[i + 1] = matlab.double(data_dict['WEEKS'][i]['end_week_pasi'])
 
-        data_struct = eng.struct(pre_filled_data)
+        time_doses = []
+        time_pasis = [0]  # Starting with time 0 for the PASI_PRE_TREATMENT_DATE
+
+        # Iterate through each week and session to fill in time_doses
+        for week in data_dict['WEEKS']:
+            for session_key, session in week.items():
+                if session_key.startswith('session_'):
+                    session_date = datetime.datetime.strptime(session['date'], "%d/%m/%Y").date()
+                    days_since_start = (session_date - pasi_pre_treatment_date).days
+                    time_doses.append(days_since_start)
+
+        # Determine the end of week PASI collection times
+        # Assuming each week's end is represented by the date of the last session plus one day
+        for week_index, week in enumerate(data_dict['WEEKS']):
+            first_session_key = f"session_{(week_index * data_dict['WEEKLY_SESSIONS']) + 1}"
+            if first_session_key in week:
+                first_session_date = datetime.datetime.strptime(week[first_session_key]['date'], "%d/%m/%Y").date()
+                # Assuming PASI is collected the day after the last session of each week
+                pasi_collection_day = (first_session_date - pasi_pre_treatment_date).days + 7
+                time_pasis.append(pasi_collection_day)
+
+        # Print results for verification
+        print("Time doses:", time_doses)
+        print("Time PASIS:", time_pasis)
+        print("UVB Doses: ", uvb_doses)
+        print("PASIS: ", pasis)
+        uvb_doses = eng.cell2mat(uvb_doses)
+        pasis = eng.cell2mat(pasis)
+        time_doses = eng.cell2mat(time_doses)
+        time_pasis = eng.cell2mat(time_pasis)
+
+        # # for filling in UVB_DOSE data
+        # uvb_dose_total = 0
+        # for i in range(1, len(data_dict['WEEKS']) * data_dict['WEEKLY_SESSIONS']):
+        #     # Initialize with np.nan, will replace if session data is found
+        #     uvb_dose_key = f"UVB_DOSE_{i}"
+        #     pre_filled_data[uvb_dose_key] = [np.nan]
+        #
+        #     # Loop through each week to find the corresponding session
+        #     for week in data_dict['WEEKS']:
+        #         session_key = f"session_{i}"
+        #         if session_key in week:
+        #             session = week[session_key]
+        #             # If actual_dose is present and not an empty string, use it
+        #             if 'actual_dose' in session and session['actual_dose'] != "":
+        #                 uvb_dose_total += session['actual_dose']
+        #                 pre_filled_data[uvb_dose_key] = [session['actual_dose']]
+        #                 break  # Found the session, no need to check further
+        #             # # If planned_dose is present and not an empty string, use it
+        #             # elif 'planned_dose' in session and session['planned_dose'] != "":
+        #             #     pre_filled_data[uvb_dose_key] = [session['planned_dose']]
+        #             #     break  # Found the session, no need to check further
+        #             # # If neither actual_dose nor planned_dose is present, np.nan is already set
+
+        # pre_filled_data['UVB_DOSE_TOTAL'] = [uvb_dose_total]
+        #
+        # for key, value in pre_filled_data.items():
+        #     pre_filled_data[key] = matlab.double(pre_filled_data[key])
+        #
+        # data_struct = eng.struct(pre_filled_data)
 
         # Define paths
         project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_v8_4.xml')
+        sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
         sbml_model_path_matlab = eng.char(sbml_model_path)
 
         # Add MATLAB scripts directory to MATLAB engine's path
@@ -150,13 +212,11 @@ def fit_uv_eff(request):
         eng.addpath(matlab_scripts_path, nargout=0)
 
         # Call the MATLAB function
-        best_uv_eff = eng.find_uv_eff(data_struct, sbml_model_path_matlab, nargout=1)
-
-        print(pre_filled_data)
+        best_uv_eff = eng.find_uv_eff(sbml_model_path_matlab, uvb_doses, pasis, time_doses, time_pasis, nargout=1)
 
         # Quit MATLAB engine
         eng.quit()
-        return Response({"best_uv_eff": best_uv_eff}, status=status.HTTP_200_OK)
+        return Response({"best_uv_eff": round(best_uv_eff, 2)}, status=status.HTTP_200_OK)
     else:
         return Response("Treatment Plan Empty", status=status.HTTP_400_BAD_REQUEST)
 
@@ -165,15 +225,57 @@ def fit_uv_eff(request):
 def simulate_model(request):
     data = json.loads(request.body.decode('utf-8'))
     treatment = data['treatment']
+    treatment_plan = treatment['treatment_plan']
     uv_eff = data['uv_eff']
     # uv_eff = matlab.double(uv_eff)
     print(uv_eff)
     # Starting the MATLAB engine
     eng = matlab.engine.start_matlab()
 
+    # for filling in UVB_DOSE data
+    uvb_dose_total = 0
+    uvb_doses = []
+    for i in range(1, len(treatment_plan['WEEKS']) * treatment_plan['WEEKLY_SESSIONS']):
+        uvb_doses.append(np.nan)
+
+        # Loop through each week to find the corresponding session
+        for week in treatment_plan['WEEKS']:
+            session_key = f"session_{i}"
+            if session_key in week:
+                session = week[session_key]
+                # If actual_dose is present and not an empty string, use it
+                if 'actual_dose' in session and session['actual_dose'] != "":
+                    uvb_dose_total += session['actual_dose']
+                    uvb_doses[i - 1] = matlab.double(session['actual_dose'])
+                    break  # Found the session, no need to check further
+                # If planned_dose is present and not an empty string, use it
+                elif 'planned_dose' in session and session['planned_dose'] != "":
+                    uvb_doses[i - 1] = matlab.double(session['planned_dose'])
+                    break  # Found the session, no need to check further
+                # # If neither actual_dose nor planned_dose is present, np.nan is already set
+
+    # Assuming data_dict is your treatment plan data structure
+    pasi_pre_treatment_date = datetime.datetime.strptime(treatment_plan['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
+
+    time_doses = []
+    # Iterate through each week and session to fill in time_doses
+    for week in treatment_plan['WEEKS']:
+        for session_key, session in week.items():
+            if session_key.startswith('session_'):
+                session_date = datetime.datetime.strptime(session['date'], "%d/%m/%Y").date()
+                days_since_start = (session_date - pasi_pre_treatment_date).days
+                time_doses.append(days_since_start)
+
+    print(uvb_doses)
+    print(time_doses)
+    print('Length: dose', len(uvb_doses))
+    print('Length: time_doses', len(time_doses))
+    uvb_doses = eng.cell2mat(uvb_doses)
+    time_doses = eng.cell2mat(time_doses)
+
     # Define paths
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_v8_4.xml')
+    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
     sbml_model_path_matlab = eng.char(sbml_model_path)
 
     # Add MATLAB scripts directory to MATLAB engine's path
@@ -181,12 +283,13 @@ def simulate_model(request):
     eng.addpath(matlab_scripts_path, nargout=0)
 
     # Call the MATLAB function
-    model_sim = eng.simulate_model(uv_eff, sbml_model_path_matlab, nargout=1)
+    model_sim = eng.simulate_model(uv_eff, sbml_model_path_matlab, uvb_doses, time_doses, nargout=1)
 
     # Access the Data and DataNames from the struct
     sim_data = model_sim['Data']
     sim_data_names = model_sim['DataNames']
     sim_data_time = model_sim['Time']
+    print(sim_data[22])
 
     # sim_data and sim_data_time likely MATLAB double arrays; convert them to Python list
     sim_data_python = [list(row) for row in sim_data]
@@ -211,8 +314,6 @@ def simulate_model(request):
     # Quit MATLAB engine
     eng.quit()
 
-
-
     # # Generate the plot
     sim_data_time = df['Time'].tolist()  # Extract simulated time points
     sim_data_pasi = df['PASI'].tolist()  # Extract simulated PASI values
@@ -222,24 +323,6 @@ def simulate_model(request):
         'x': sim_data_time,  # or your specific logic for time
         'y': sim_data_pasi,  # or your specific logic for PASI values
     })
-
-    #
-    # # Assuming you have actual PASI measurements at the same time points
-    # # If not, you'll need to adjust `time_pasis` and `pasis` accordingly based on your data structure
-    # time_pasis = sim_data_time
-    # pasis = [week['end_week_pasi'] for week in treatment['treatment_plan']['WEEKS'] if week['end_week_pasi'] != '']
-    #
-    # patient_id = treatment['patient_profile']  # Define this based on your actual data or input
-    #
-    # # # Now call the plot function with these formatted parameters
-    # print(uv_eff)
-    # print(type(uv_eff))
-    # uv_eff = convert_matlab_double_to_python(uv_eff)
-    # print(uv_eff[0][0])
-    # plot_div = generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff[0][0], patient_id)
-
-    # Include the plot div in your response
-    # return JsonResponse({'plot': plot_div})
 
 
 def generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff, patient_id):
@@ -270,8 +353,10 @@ def generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff,
         xaxis_title='Time (weeks)',
         yaxis_title='PASI',
         font=dict(family="Arial", size=48),
-        xaxis=dict(range=[-0.5, max(adjusted_sim_data_time)+0.5]), # Adjusted to show full range based on simulated time
-        yaxis=dict(range=[min(pasis_float) * 0.9, max(pasis_float) * 1.1]), # Dynamically adjust y-axis range based on PASI values
+        xaxis=dict(range=[-0.5, max(adjusted_sim_data_time) + 0.5]),
+        # Adjusted to show full range based on simulated time
+        yaxis=dict(range=[min(pasis_float) * 0.9, max(pasis_float) * 1.1]),
+        # Dynamically adjust y-axis range based on PASI values
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
     )
 
@@ -279,7 +364,6 @@ def generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff,
     plot_div = fig.to_html(full_html=False)
 
     return plot_div
-
 
 
 @api_view(['GET'])
