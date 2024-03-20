@@ -27,7 +27,9 @@ function PatientDetails() {
   const [treatmentPlan, setTreatmentPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showDate, setShowDate] = useState(false);
+  const [showSessionDate, setShowSessionDate] = useState(false);
+  const [showStartDate, setShowStartDate] = useState(false);
+  const [showPasiPreDate, setShowPasiPreDate] = useState(false);
   const [editingTable, setEditingTable] = useState(false);
   // this is for the quick editing functionality
   const [editableSessions, setEditableSessions] = useState({});
@@ -38,9 +40,9 @@ function PatientDetails() {
   const [calculatingUvEff, setCalculatingUvEff] = useState(false);
   const [simulationPlot, setSimulationPlot] = useState({});
   const [simulatingModel, setSimulatingModel] = useState(false);
-
+  
   const dateOptions = {
-    inputPlaceholderProp: "Select Start Date",
+    inputPlaceholderProp: "Select Date",
     language: "en-GB",
     clearBtn: false,
     inputDateFormatProp: {
@@ -64,8 +66,16 @@ function PatientDetails() {
       : [year, month, day].join(join_char);
   };
 
-  const handleDateClose = (state) => {
-    setShowDate(state);
+  const handleDateClose = (datepicker) => {
+    if (datepicker === "start_date") {
+      setShowStartDate(!showStartDate);
+    }
+    if (datepicker === "pasi_treatment_date") {
+      setShowPasiPreDate(!showPasiPreDate);
+    }
+    if (datepicker === "session_date") {
+      setShowSessionDate(!showSessionDate);
+    }
   };
 
   const formatSessionString = (str) => {
@@ -323,13 +333,15 @@ function PatientDetails() {
   const handleStartTreatment = async (e) => {
     e.preventDefault();
     let data = e.target;
+    console.log(data);
     let formattedData = {
       patient_profile_id: `${patientDetails.user.patient_profile}`,
-      start_date: data[0].value,
-      weekly_sessions: data[1].value,
-      num_of_weeks: data[2].value,
-      med: data[3].value,
-      pasi_pre_treatment: data[4].value,
+      pasi_pre_treatment_date: data[0].value,
+      pasi_pre_treatment: data[1].value,
+      med: data[2].value,
+      start_date: data[3].value,
+      weekly_sessions: data[4].value,
+      num_of_weeks: data[5].value,
     };
 
     const cleanedFormData = JSON.stringify(formattedData);
@@ -440,6 +452,15 @@ function PatientDetails() {
       }
     });
 
+    // Reverse loop through the weeks to find the last complete week
+    for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
+      const week = treatmentPlan.WEEKS[i];
+      if (week.uv_eff !== "") {
+        plot_data["uv_eff"] = week.uv_eff;
+        break;
+      }
+    }
+
     plot_data["end_week_pasis"] = end_week_pasis;
 
     plot_data["pasi_pre_treatment"] = treatmentPlan.PASI_PRE_TREATMENT;
@@ -533,8 +554,8 @@ function PatientDetails() {
                           openedSessionDetails,
                           dateOptions
                         )}
-                        show={showDate}
-                        setShow={handleDateClose}
+                        show={showSessionDate}
+                        setShow={() => handleDateClose("session_date")}
                         onChange={(newDateValue) =>
                           handleSessionChange(
                             Object.keys(openedSessionDetails)[0],
@@ -967,19 +988,82 @@ function PatientDetails() {
                       {/* <!-- Modal body --> */}
                       <form onSubmit={handleStartTreatment}>
                         <div className="grid gap-4 mb-4 sm:grid-cols-2">
+                          <div className="relative col-span-2">
+                            <label
+                              htmlFor="pasi_treatment_date"
+                              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                            >
+                              PASI Pre-Treatment Collection Date
+                            </label>
+                            <Datepicker
+                              name="pasi_treatment_date"
+                              id="pasi_treatment_date"
+                              options={dateOptions}
+                              show={showPasiPreDate}
+                              setShow={() =>
+                                handleDateClose("pasi_treatment_date")
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-4 mb-4 sm:grid-cols-2">
+                          <div className="relative">
+                            <label
+                              htmlFor="pasi_pre_treatment"
+                              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                            >
+                              PASI Pre-treatment
+                            </label>
+                            <div>
+                              <input
+                                step="0.001"
+                                required
+                                min={0}
+                                type="number"
+                                name="pasi_pre_treatment"
+                                id="pasi_pre_treatment"
+                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <label
+                              htmlFor="med"
+                              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                            >
+                              Minimal Erythema Dose
+                            </label>
+                            <div>
+                              <input
+                                step="0.001"
+                                required
+                                min={0}
+                                type="number"
+                                name="med"
+                                id="med"
+                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 mb-4 sm:grid-cols-2">
                           <div className="relative sm:col-span-2">
                             <label
                               htmlFor="start_date"
                               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                             >
-                              Start Date
+                              Treatment Start Date{" "}
+                              <span className="dark:text-gray-300 text-xs">
+                                (day of first session)
+                              </span>
                             </label>
                             <Datepicker
                               name="start_date"
                               id="start_date"
                               options={dateOptions}
-                              show={showDate}
-                              setShow={handleDateClose}
+                              show={showStartDate}
+                              setShow={() => handleDateClose("start_date")}
                             />
                           </div>
                         </div>
@@ -1024,46 +1108,6 @@ function PatientDetails() {
                               <option value="8">8 Weeks</option>
                               <option value="12">12 Weeks (default)</option>
                             </select>
-                          </div>
-                        </div>
-                        <div className="grid gap-4 mb-4 sm:grid-cols-2">
-                          <div className="relative sm:col-span-1">
-                            <label
-                              htmlFor="med"
-                              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                            >
-                              Minimal Erythema Dose
-                            </label>
-                            <div>
-                              <input
-                                step="0.001"
-                                required
-                                min={0}
-                                type="number"
-                                name="med"
-                                id="med"
-                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-                          <div className="relative sm:col-span-1">
-                            <label
-                              htmlFor="pasi_pre_treatment"
-                              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                            >
-                              PASI Pre-treatment
-                            </label>
-                            <div>
-                              <input
-                                step="0.001"
-                                required
-                                min={0}
-                                type="number"
-                                name="pasi_pre_treatment"
-                                id="pasi_pre_treatment"
-                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                              />
-                            </div>
                           </div>
                         </div>
                         <div className="flex justify-center">
