@@ -3,17 +3,16 @@ import Plot from "react-plotly.js";
 
 function MyPlotComponent({ plotData }) {
   // Extract necessary data from plotData
-  const { x, y, curr_week, end_week_pasis, pasi_pre_treatment, weeks } = plotData;
+  const { x, y, curr_week, end_week_pasis, pasi_pre_treatment, weeks, uv_eff } =
+    plotData;
 
   // Prepare data for the plot
   const scaledY = y.map((value) => value * Number(pasi_pre_treatment));
   // Assuming plotData contains your simulation data including the time points
-  const maxTime = 735;
+  const maxTime = 85;
 
   // Scale the time points to a 0-12 week range
-  const scaledTime = x.map(
-    (timePoint) => (timePoint / maxTime) * weeks
-  );
+  const scaledTime = x.map((timePoint) => (timePoint / maxTime) * weeks);
 
   const simulatedPASI = {
     x: scaledTime, // Already adjusted to represent weeks
@@ -49,7 +48,7 @@ function MyPlotComponent({ plotData }) {
       layout={{
         width: 720,
         height: 440,
-        title: `Week ${curr_week}: Model Simulation and Actual End-Week PASI`,
+        title: `Week ${curr_week}: Model Simulation and Actual End-Week PASI | UVB Eff: ${uv_eff}`,
         xaxis: {
           title: "Time (weeks)",
           range: [-1, 12], // Ensure this matches the range of your simulation
