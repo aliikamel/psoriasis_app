@@ -69,6 +69,7 @@ def create_patient_treatment(request):
         return Response({"error": "Patient profile does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
     # Extract the remaining data from the request body
+    pasi_pre_treatment_date = datetime.datetime.strptime(body['pasi_pre_treatment_date'], "%d/%m/%Y").date()
     treatment_start_date = datetime.datetime.strptime(body['start_date'], "%d/%m/%Y").date()
     num_of_weeks = int(body['num_of_weeks'])
     weekly_sessions = int(body['weekly_sessions'])
@@ -83,8 +84,11 @@ def create_patient_treatment(request):
 
     # Constructing treatment_plan object
     treatment_plan = {
+        "PASI_PRE_TREATMENT_DATE": pasi_pre_treatment_date.strftime("%d/%m/%Y"),
         "WEEKLY_SESSIONS": weekly_sessions,
         "PASI_PRE_TREATMENT": pasi_pre_treatment,
+        "TREATMENT_START_DATE": treatment_start_date.strftime("%d/%m/%Y"),
+        "TREATMENT_END_DATE": treatment_end_date.strftime("%d/%m/%Y"),
         "WEEKS": []
     }
 
