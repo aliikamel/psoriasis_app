@@ -18,54 +18,81 @@ import { X } from "lucide-react";
 function MyPlotComponent({ plotData }) {
   const { theme } = useTheme();
   // Extract necessary data from plotData
-  const { x, y, curr_week, end_week_pasis, pasi_pre_treatment, weeks, uv_eff } =
-    plotData;
+  const {
+    x,
+    y,
+    curr_week,
+    pasis,
+    time_pasis,
+    pasi_pre_treatment,
+    weeks,
+    uv_eff,
+    abnormal_time_pasis,
+    abnormal_pasis,
+  } = plotData;
 
   // Prepare data for the plot
-  const scaledY = y.map((value) => value * Number(pasi_pre_treatment));
   // Assuming plotData contains your simulation data including the time points
   let fullTime = x[x.length - 1];
   const maxTime = fullTime / 2;
 
   // Scale the time points to a 0-12 week range
   const scaledTime = x.map((timePoint) => (timePoint / maxTime) * weeks);
+  const scaledTimePasis = time_pasis.map(
+    (timePoint) => (timePoint / maxTime) * weeks
+  );
+  const scaledTimeAbnormalPasis = abnormal_time_pasis.map(
+    (timePoint) => (timePoint / maxTime) * weeks
+  );
+
+  // find the maximum pasi value
+  const max_pasi = Math.max(pasi_pre_treatment, ...pasis);
 
   const simulatedPASI = {
-    x: scaledTime, // Already adjusted to represent weeks
-    y: scaledY,
-    type: "scatter",
+    x: scaledTime,
+    y: y,
+    type: "line",
     mode: "lines+markers",
     name: "Simulated PASI",
-    line: { color: theme === "dark" ? "white" : "black" },
-    marker: { color: theme === "dark" ? "white" : "black" },
+    line: { color: theme === "dark" ? "white" : "black", width: 1 },
+    marker: { color: theme === "dark" ? "white" : "black"},
   };
 
   const actualPASI = {
-    x: Object.keys(end_week_pasis), // Assuming this is an array or object of week numbers
-    y: Object.values(end_week_pasis), // Assuming this is an array or object of actual PASI values for end weeks
+    x: scaledTimePasis,
+    y: pasis,
     type: "scatter",
     mode: "markers",
     name: "Actual End-Week PASI",
-    marker: { color: "red", size: 10, symbol: "x" },
+    marker: { color: "#22c55e", size: 16, symbol: "x" },
+  };
+
+  const abnormalPasi = {
+    x: scaledTimeAbnormalPasis,
+    y: abnormal_pasis,
+    type: "scatter",
+    mode: "markers",
+    name: "Abnormal End-Week PASI",
+    marker: { color: "red", size: 16, symbol: "x" },
   };
 
   const preTreatment = {
-    x: [0], // Assuming this is an array or object of week numbers
-    y: [Number(pasi_pre_treatment)], // Assuming this is an array or object of actual PASI values for end weeks
+    x: [0],
+    y: [Number(pasi_pre_treatment)],
     type: "scatter",
     mode: "markers",
     name: "PASI Pre-Treatment",
     marker: { color: "blue", size: 16, symbol: "x" },
   };
 
-  let data = [];
+  // let data = [];
 
-  x.forEach((val, index) => {
-    let entry = { Time: scaledTime[index], Pasis: scaledY[index] };
-    data.push(entry);
-  });
+  // x.forEach((val, index) => {
+  //   let entry = { Time: scaledTime[index], Pasis: scaledY[index] };
+  //   data.push(entry);
+  // });
 
-  console.log(data);
+  // console.log(data);
 
   // let data = [
   //   { Time: 1, Pasis: 8 },
@@ -87,12 +114,14 @@ function MyPlotComponent({ plotData }) {
   //   { Time: 7, Pasis: 2 },
   // ];
 
+  //  { gridcolor: theme === "dark" ? "#4b5563" : "#f3f4f6" }
+
   return (
     <div className="mx-auto w-2/3 h-full">
       <Plot
         className="flex items-center mx-auto w-full h-full dark:bg-gray-700 rounded-2xl p-2"
         // style={{ position: "relative", display: "flex"}}
-        data={[simulatedPASI, actualPASI, preTreatment]}
+        data={[simulatedPASI, actualPASI, preTreatment, abnormalPasi]}
         layout={{
           width: 960,
           height: 500,
@@ -107,10 +136,12 @@ function MyPlotComponent({ plotData }) {
           xaxis: {
             title: "Time (weeks)",
             range: [-1, 12], // Ensure this matches the range of your simulation
+            gridcolor: theme === "dark" ? "#4b5563" : "#f3f4f6",
           },
           yaxis: {
             title: "PASI",
-            range: [0, pasi_pre_treatment + 1], // Dynamically adjust based on PASI values
+            range: [0, max_pasi + 1], // Dynamically adjust based on PASI values
+            gridcolor: theme === "dark" ? "#4b5563" : "#f3f4f6",
           },
           legend: {
             orientation: "h",
@@ -118,6 +149,7 @@ function MyPlotComponent({ plotData }) {
             y: 1.02,
             xanchor: "right",
             x: 1,
+            // itemsizing: "trace"
           },
           paper_bgcolor: theme === "dark" ? "#374151" : "white",
           plot_bgcolor: theme === "dark" ? "#374151" : "white",

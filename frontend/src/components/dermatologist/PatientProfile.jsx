@@ -428,7 +428,7 @@ function PatientDetails() {
     // Reverse loop through the weeks to find the last complete week
     for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
       const week = treatmentPlan.WEEKS[i];
-      if (week.uv_eff !== "") {
+      if (week.uv_eff !== "" && week.uv_eff !== 0) {
         uv_eff = week.uv_eff;
         break;
       }
@@ -458,6 +458,11 @@ function PatientDetails() {
 
     plot_data["x"] = data.x;
     plot_data["y"] = data.y;
+    plot_data["pasis"] = data.actual_pasis['pasis'];
+    plot_data["time_pasis"] = data.actual_pasis["time_pasis"];
+    plot_data["abnormal_pasis"] = data.anomalies["abnormal_pasis"]
+    plot_data["abnormal_time_pasis"] = data.anomalies["abnormal_time_pasis"];
+    
 
     // Reverse loop through the weeks to find the last complete week
     for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
@@ -468,23 +473,23 @@ function PatientDetails() {
       }
     }
 
-    let end_week_pasis = {};
-    treatmentPlan.WEEKS.forEach((week, index) => {
-      if (week.end_week_pasi !== "") {
-        end_week_pasis[index + 1] = week.end_week_pasi;
-      }
-    });
+    // let end_week_pasis = {};
+    // treatmentPlan.WEEKS.forEach((week, index) => {
+    //   if (week.end_week_pasi !== "") {
+    //     end_week_pasis[index + 1] = week.end_week_pasi;
+    //   }
+    // });
 
     // Reverse loop through the weeks to find the last complete week
     for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
       const week = treatmentPlan.WEEKS[i];
-      if (week.uv_eff !== "") {
+      if (week.uv_eff !== "" && week.uv_eff !== 0) {
         plot_data["uv_eff"] = week.uv_eff;
         break;
       }
     }
 
-    plot_data["end_week_pasis"] = end_week_pasis;
+    // plot_data["end_week_pasis"] = end_week_pasis;
 
     plot_data["pasi_pre_treatment"] = treatmentPlan.PASI_PRE_TREATMENT;
     plot_data["weeks"] = treatmentPlan.WEEKS.length;
@@ -1008,7 +1013,7 @@ function PatientDetails() {
                               className="p-2"
                               key={`week_${index + 1}_uv_eff`}
                             >
-                              {week.uv_eff && (
+                              {week.uv_eff !== "" && (
                                 <button
                                   disabled
                                   className="w-16 py-2 font-bold rounded-md bg-white border border-gray-300 text-gray-700 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-200 dark:text-white"
