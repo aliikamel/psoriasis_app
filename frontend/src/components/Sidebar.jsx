@@ -17,7 +17,7 @@ export default function Sidebar({ children }) {
                 expanded ? "w-32" : "w-0"
               }`}
             >
-              <h3>Hey Derma!</h3>
+              {/* <h3>Hey Derma!</h3> */}
             </div>
             <button
               onClick={() => setExpanded((curr) => !curr)}
