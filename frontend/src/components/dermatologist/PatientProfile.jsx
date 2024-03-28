@@ -34,13 +34,14 @@ function PatientDetails() {
   // this is for the quick editing functionality
   const [editableSessions, setEditableSessions] = useState({});
   const [editableWeeks, setEditableWeeks] = useState({});
+  const [missedOpenedSession, setMissedOpenedSession] = useState(false);
   // the details of the selected session to be displayed in modal
   const [openedSessionDetails, setOpenedSessionedDetails] = useState({});
   const [uvEff, setUvEff] = useState({});
   const [calculatingUvEff, setCalculatingUvEff] = useState(false);
   const [simulationPlot, setSimulationPlot] = useState({});
   const [simulatingModel, setSimulatingModel] = useState(false);
-  
+
   const dateOptions = {
     inputPlaceholderProp: "Select Date",
     language: "en-GB",
@@ -100,6 +101,9 @@ function PatientDetails() {
 
   // Update editableSessions state upon input change
   const handleSessionChange = (sessionKey, rawValue, property) => {
+    if (property === "missed_session") {
+      setMissedOpenedSession(rawValue);
+    }
     // Only process if the property is actual_dose or planned_dose
     if (property === "actual_dose" || property === "planned_dose") {
       // Use a regular expression to validate the format: up to 2 digits before the decimal, up to 3 after
@@ -124,7 +128,7 @@ function PatientDetails() {
         ...prevState,
         [sessionKey]: {
           ...prevState[sessionKey],
-          [property]: rawValue === "" ? "" : Number(rawValue),
+          [property]: rawValue === "" ? "" : rawValue,
         },
       }));
     }
@@ -153,6 +157,7 @@ function PatientDetails() {
         if (sessionKey in week) {
           const editableSession = editableSessions[sessionKey];
           const session = week[sessionKey];
+          console.log(editableSession);
 
           // Apply updates to session properties
           if ("planned_dose" in editableSession) {
@@ -163,6 +168,14 @@ function PatientDetails() {
           }
           if ("date" in editableSession) {
             session.date = formatDate(editableSession.date, "/");
+          }
+          if ("missed_session" in editableSession) {
+            if (editableSession.missed_session) {
+              session.actual_dose = 0;
+              session["missed_session"] = 1;
+            } else {
+              session["missed_session"] = 0;
+            }
           }
         }
       });
@@ -262,6 +275,10 @@ function PatientDetails() {
     }
   }, [openedSessionDetails]);
 
+  const handleMissedSessionCheck = (e) => {
+    setMissedOpenedSession(e.target.checked);
+  };
+
   const getUpdatedDateOptions = (openedSessionDetails, existingOptions) => {
     const sessionKey = Object.keys(openedSessionDetails)[0];
     const sessionData = openedSessionDetails[sessionKey];
@@ -327,7 +344,13 @@ function PatientDetails() {
     // ERROR IS COMING FROM HERE AS ELEMENT ISNT RENDERED YET on first click
     let modal = document.getElementById(modal_id);
     modal && (modal.hidden ? (modal.hidden = false) : (modal.hidden = true));
-    modal_id === "edit_session_modal" && setEditableSessions({});
+    if (modal_id === "edit_session_modal") {
+      setEditableSessions({});
+      setMissedOpenedSession(false);
+      if (modal.hidden) {
+        setOpenedSessionedDetails({});
+      }
+    }
   };
 
   const handleStartTreatment = async (e) => {
@@ -505,9 +528,9 @@ function PatientDetails() {
             aria-hidden="true"
             className="backdrop-blur-sm overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
           >
-            <div className="relative p-4 w-full max-w-2xl h-full m-auto">
+            <div className="relative p-4 w-full h-full">
               {/* <!-- Modal content --> */}
-              <div className="relative p-4 bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
+              <div className="relative p-4 bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5 h-fit m-auto mt-24 w-1/3">
                 {/* <!-- Modal header --> */}
                 <div className="flex justify-between items-center pb-4 mb-4 rounded-t border-b sm:mb-5 dark:border-gray-600">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -615,38 +638,106 @@ function PatientDetails() {
                         Actual Dose
                       </label>
                       <div>
-                        <input
-                          min={0}
-                          type="number"
-                          name="actual_dose"
-                          id="actual_dose"
-                          step="0.001"
-                          value={
-                            editableSessions[
-                              Object.keys(openedSessionDetails)[0]
-                            ] &&
-                            "actual_dose" in
+                        {/* FOR THE OPENED SESSION DETAILS */}
+                        {Object.keys(openedSessionDetails).map(
+                          (session_key) => {
+                            let sessionMissed =
                               editableSessions[
                                 Object.keys(openedSessionDetails)[0]
-                              ]
-                              ? editableSessions[
+                              ] &&
+                              "missed_session" in
+                                editableSessions[
                                   Object.keys(openedSessionDetails)[0]
-                                ].actual_dose
-                              : openedSessionDetails[
-                                  Object.keys(openedSessionDetails)[0]
-                                ].actual_dose
+                                ]
+                                ? editableSessions[
+                                    Object.keys(openedSessionDetails)[0]
+                                  ].missed_session === 1
+                                : openedSessionDetails[
+                                    Object.keys(openedSessionDetails)[0]
+                                  ].missed_session === 1;
+
+                            console.log(sessionMissed);
+
+                            return sessionMissed ? (
+                              <input
+                                disabled
+                                type="text"
+                                name="actual_dose"
+                                id="disabled_actual_dose"
+                                value=""
+                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              />
+                            ) : (
+                              <input
+                                min={0}
+                                type="number"
+                                name="actual_dose"
+                                id="actual_dose"
+                                step="0.001"
+                                value={
+                                  editableSessions[
+                                    Object.keys(openedSessionDetails)[0]
+                                  ] &&
+                                  "actual_dose" in
+                                    editableSessions[
+                                      Object.keys(openedSessionDetails)[0]
+                                    ]
+                                    ? editableSessions[
+                                        Object.keys(openedSessionDetails)[0]
+                                      ].actual_dose
+                                    : openedSessionDetails[
+                                        Object.keys(openedSessionDetails)[0]
+                                      ].actual_dose
+                                }
+                                onChange={(e) =>
+                                  handleSessionChange(
+                                    Object.keys(openedSessionDetails)[0],
+                                    e.target.value,
+                                    "actual_dose"
+                                  )
+                                }
+                                className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              />
+                            );
                           }
-                          onChange={(e) =>
-                            handleSessionChange(
-                              Object.keys(openedSessionDetails)[0],
-                              e.target.value,
-                              "actual_dose"
-                            )
-                          }
-                          className="block bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        />
+                        )}
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center py-4">
+                    <input
+                      checked={
+                        editableSessions[
+                          Object.keys(openedSessionDetails)[0]
+                        ] &&
+                        "missed_session" in
+                          editableSessions[Object.keys(openedSessionDetails)[0]]
+                          ? editableSessions[
+                              Object.keys(openedSessionDetails)[0]
+                            ].missed_session
+                          : openedSessionDetails[
+                              Object.keys(openedSessionDetails)[0]
+                            ].missed_session
+                      }
+                      id="missed-session-checkbox"
+                      type="checkbox"
+                      value=""
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      // onChange={handleMissedSessionCheck}
+                      onChange={(e) =>
+                        handleSessionChange(
+                          Object.keys(openedSessionDetails)[0],
+                          e.target.checked,
+                          "missed_session"
+                        )
+                      }
+                    />
+                    <label
+                      htmlFor="missed-session-checkbox"
+                      className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                    >
+                      Missed Session
+                    </label>
                   </div>
                   <div className="flex justify-center">
                     <button
@@ -671,7 +762,7 @@ function PatientDetails() {
                   {`${patientDetails.user.first_name} ${patientDetails.user.last_name}'s Dashboard`}
                 </h1>
                 <p className="text-lg font-normal leading-tight tracking-tight text-gray-900 md:text-lg dark:text-gray-400">
-                  {`${patientDetails.user.first_name}'s next treatment is scheduled for 21/09/2004 - in 3 days`}
+                  {`${patientDetails.user.first_name}'s next treatment is scheduled for 29/03/2024 - in 2 days`}
                 </p>
               </div>
             </div>
@@ -1130,6 +1221,9 @@ function PatientDetails() {
                 <MyPlotComponent plotData={simulationPlot} />
               </div>
             )}
+            {/* <div className="p-6 border-2 bg-white dark:bg-gray-800 gap-2 flex flex-col justify-center rounded-lg border-gray-300 dark:border-gray-700 rounded-lg h-auto md:h-auto mb-4">
+              <MyPlotComponent plotData={simulationPlot} />
+            </div> */}
           </div>
 
           {/* RIGHT SIDE 1/3 */}
@@ -1160,10 +1254,10 @@ function PatientDetails() {
                     Other Info
                   </h5>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {patientDetails.contact_number || "+44 757 066 3465"}
+                    {patientDetails.contact_number || "+44 123 456 7890"}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {patientDetails.dob || "D.O.B: October 31st, 2003"}
+                    {patientDetails.dob || "D.O.B: October 30th, 2003"}
                   </p>
                 </div>
               </div>
