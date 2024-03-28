@@ -53,9 +53,11 @@ for uv_eff_val=0:0.01:1
     sim_data = model_sim(model, stop_time);
     err = absolute_pasi_error(Time_full, PASI_full, sim_data.Time, sim_data.Data(:, plot_index(1)), 0, 1, pasis(1));
     disp(['uv_eff = ' num2str(uv_eff_val) '; sum of abs error = ' num2str(sum(abs(err)))]);
-    if(sum(abs(err.^2)) < sum(abs(best_err.^2)))
+    %disp(['CURRENT BEST ERR= ' num2str(sum(abs(best_err.^2))) '; sum of abs error = ' num2str(sum(abs(err.^2)))]);
+    %if(sum(abs(err.^2)) < sum(abs(best_err.^2)))
+    if(sum(abs(err)) < sum(abs(best_err)))
         best_err = err;
-           best_uv_eff = uv_eff_val;
+        best_uv_eff = uv_eff_val;
     end
 end
 % adding the best UVB efficacy parameter to the table
