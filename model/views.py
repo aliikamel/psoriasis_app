@@ -138,7 +138,6 @@ def fit_uv_eff(request):
             pasis.append(np.nan)
 
             if data_dict['WEEKS'][i]['end_week_pasi'] != "":
-                # pasis[i+1] = data_dict['WEEKS'][i]['end_week_pasi']
                 pasis[i + 1] = matlab.double(data_dict['WEEKS'][i]['end_week_pasi'])
 
         time_doses = []
@@ -266,6 +265,25 @@ def simulate_model(request):
                 days_since_start = (session_date - pasi_pre_treatment_date).days
                 time_doses.append(days_since_start)
 
+    time_pasis = []
+    # Determine the end of week PASI collection times
+    # Assuming each week's end is represented by the date of the last session plus one day
+    for week_index, week in enumerate(treatment_plan['WEEKS']):
+        first_session_key = f"session_{(week_index * treatment_plan['WEEKLY_SESSIONS']) + 1}"
+        if first_session_key in week:
+            first_session_date = datetime.datetime.strptime(week[first_session_key]['date'], "%d/%m/%Y").date()
+            # Assuming PASI is collected the day after the last session of each week
+            pasi_collection_day = (first_session_date - pasi_pre_treatment_date).days + 7
+            time_pasis.append(pasi_collection_day)
+
+    # Creating PASIs list
+    pasis = []
+    for i in range(0, len(treatment_plan['WEEKS'])):
+        pasis.append(np.nan)
+
+        if treatment_plan['WEEKS'][i]['end_week_pasi'] != "":
+            pasis[i] = treatment_plan['WEEKS'][i]['end_week_pasi']
+
     print(uvb_doses)
     print(time_doses)
     print('Length: dose', len(uvb_doses))
@@ -306,23 +324,90 @@ def simulate_model(request):
     # Now you can directly add it to your DataFrame as a new column
     df['Time'] = sim_data_time_python_flat
 
+    # Scale the PASIS
+    df['PASI'] = df['PASI'].mul(treatment_plan['PASI_PRE_TREATMENT'])
+
     print(df.head())
 
     # If you want to select specific columns ('PASI' and 'Time') and send them back
-    selected_data = df[['PASI', 'Time']].to_dict(orient='list')
+    # sim_pasi_time = df[['PASI', 'Time']].to_dict(orient='list')
+    sim_pasi_time = df[['PASI', 'Time']]
 
     # Quit MATLAB engine
     eng.quit()
 
-    # # Generate the plot
+    calculated_anomalies = check_pasi_errors(pasis, time_pasis, sim_pasi_time)
+
+    # Generate the plot data
     sim_data_time = df['Time'].tolist()  # Extract simulated time points
     sim_data_pasi = df['PASI'].tolist()  # Extract simulated PASI values
+    actual_pasis = {'pasis': [], 'time_pasis': []}
+    for index, val in enumerate(pasis):
+        if val is not np.nan:
+            actual_pasis['pasis'].append(val)
+            actual_pasis['time_pasis'].append(time_pasis[index])
 
-    # Example of modifying the backend endpoint to return plot data
+    # dict for storing the abnormal/anomaly PASI values
+    anomalies = {'abnormal_pasis': [], 'abnormal_time_pasis': []}
+    for item in calculated_anomalies:
+        if item['anomaly']:
+            anomalies['abnormal_pasis'].append(item['actual_pasi'])
+            anomalies['abnormal_time_pasis'].append(item['actual_time'])
+
     return Response({
         'x': sim_data_time,  # or your specific logic for time
         'y': sim_data_pasi,  # or your specific logic for PASI values
+        'actual_pasis': actual_pasis,
+        'anomalies': anomalies
     })
+
+
+def check_pasi_errors(pasis, time_pasis, sim_pasis):
+    # Assuming sim_pasis is your DataFrame and you're interested in Time values close to 7
+    epsilon = 0.0001  # Define how close the numbers need to be to consider them equal
+    sim_pasis_time = []
+
+    print("RESULTS OF CHECK_PASI_ERRORS: ")
+    print("PASIS: ", pasis)
+    print("TIME PASIS: ", time_pasis)
+    print("SIM PASIS: ")
+    for index, pasi in enumerate(pasis):
+        if pasi is not np.nan:
+            time_rows = sim_pasis.loc[np.isclose(sim_pasis['Time'], time_pasis[index], atol=epsilon)]
+            if not time_rows.empty:
+                # Take the first row for the current time_pasis[index] which is nearest to the specified time
+                first_row = time_rows.iloc[0]
+                print(f"PASI {pasi} at Time {time_pasis[index]}")
+                simulated_pasi = first_row['PASI']
+
+                # I want to do my anomaly detection here where i check using the function threshold here
+                print(first_row)
+
+                # ABS PASI_ERROR
+                abs_pasi_error = abs(pasi - simulated_pasi)
+
+                # ERROR THRESHOLD
+                threshold = 5 * np.exp(-abs_pasi_error)
+
+                # Check if the simulated PASI is within the threshold range of the actual PASI
+                is_anomaly = abs_pasi_error > threshold
+
+                print("Absolute PASI Error: ", abs_pasi_error)
+                print("Threshold: ", threshold)
+                print("Anomaly? : ", is_anomaly)
+
+                sim_pasis_time.append({
+                    # 'pasi_index': index+1,
+                    'actual_pasi': pasi,
+                    'actual_time': time_pasis[index],
+                    'simulated_pasi': simulated_pasi,
+                    'simulated_time': first_row['Time'],
+                    'anomaly': is_anomaly
+                })
+
+    # Convert the dictionary to a DataFrame for further processing or analysis
+    print(sim_pasis_time)
+    return sim_pasis_time
 
 
 def generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff, patient_id):
