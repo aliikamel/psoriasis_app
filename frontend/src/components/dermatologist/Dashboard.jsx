@@ -10,6 +10,7 @@ import {
   Settings,
   UsersRound,
   BrainCircuit,
+  Upload,
 } from "lucide-react";
 
 // import { useState, useEffect } from "react";
@@ -38,10 +39,15 @@ function Dashboard() {
           <SidebarItem icon={<UsersRound size={20} />} text="Patients" />
         </a>
 
-        <SidebarItem
-          icon={<BrainCircuit size={20} />}
-          text="Model Simulation"
-        />
+        <a href="simulate-model">
+          <SidebarItem
+            icon={<BrainCircuit size={20} />}
+            text="Model Simulation"
+          />
+        </a>
+        <a href="upload">
+          <SidebarItem icon={<Upload />} text="Upload & Run" />
+        </a>
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />
         <SidebarItem icon={<Layers size={20} />} text="Tasks" />
 

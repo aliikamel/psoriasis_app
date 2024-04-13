@@ -13,6 +13,7 @@ import {
   UsersRound,
   BrainCircuit,
   Ellipsis,
+  Upload
 } from "lucide-react";
 import Sidebar, { SidebarItem } from "../Sidebar";
 import axios from "axios";
@@ -154,6 +155,9 @@ function Patients() {
             icon={<BrainCircuit size={20} />}
             text="Model Simulation"
           />
+        </a>
+        <a href="upload">
+          <SidebarItem icon={<Upload />} text="Upload & Run" />
         </a>
 
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />

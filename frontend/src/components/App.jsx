@@ -5,6 +5,7 @@ import Dashboard from "./dermatologist/Dashboard";
 import Patients from "./dermatologist/Patients";
 import PatientDetails from "./dermatologist/PatientProfile";
 import SimulateModel from "./dermatologist/SimulateModel";
+import Upload from "./dermatologist/Upload";
 import Login from "./Login";
 import Register from "./Register";
 import Profile from "./Profile";
@@ -44,6 +45,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <SimulateModel />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/upload"
+              element={
+                <PrivateRoute>
+                  <Upload />
                 </PrivateRoute>
               }
             />

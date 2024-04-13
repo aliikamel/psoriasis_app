@@ -17,6 +17,7 @@ import {
   Save,
   Crosshair,
   CirclePlay,
+  Upload
 } from "lucide-react";
 import profile from "../../assets/Profile.svg";
 import Datepicker from "tailwind-datepicker-react";
@@ -519,7 +520,9 @@ function PatientDetails() {
             text="Model Simulation"
           />
         </a>
-
+        <a href="upload">
+          <SidebarItem icon={<Upload />} text="Upload & Run" />
+        </a>
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />
         <SidebarItem icon={<Layers size={20} />} text="Tasks" />
       </Sidebar>
