@@ -102,19 +102,7 @@ def fit_uv_eff(request):
 
     if data_dict['WEEKS']:
         # Starting the MATLAB engine
-        eng = matlab.engine.start_matlab()
-
-        # Pre-fill the data structure with np.nan for all expected fields
-        # pre_filled_data = {
-        #     "ID": [0],
-        #     "PASI_PRE_TREATMENT": [data_dict['PASI_PRE_TREATMENT']],
-        #     **{f"PASI_END_WEEK_{i + 1}": [np.nan if week.get('end_week_pasi', '') == '' else week.get('end_week_pasi')]
-        #        for i, week in enumerate(data_dict['WEEKS'])},
-        #     "LAST_FU_PASI": [np.nan],
-        #     "LAST_FU_MONTH": [np.nan],
-        #     "UVB_DOSE_TOTAL": [0],
-        #     "UV_EFF_W_12": [0]
-        # }
+        model, eng = prepare_matlab()
 
         # Assuming data_dict is your treatment plan data structure
         pasi_pre_treatment_date = datetime.datetime.strptime(data_dict['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
@@ -132,7 +120,6 @@ def fit_uv_eff(request):
                     session = week[session_key]
                     # If actual_dose is present and not an empty string, use it
                     if 'actual_dose' in session and session['actual_dose'] != "":
-                        # uvb_doses[i - 1] = session['actual_dose']
                         uvb_doses[i - 1] = matlab.double(session['actual_dose'])
                         break  # Found the session, no need to check further
 
@@ -175,47 +162,8 @@ def fit_uv_eff(request):
         time_doses = eng.cell2mat(time_doses)
         time_pasis = eng.cell2mat(time_pasis)
 
-        # # for filling in UVB_DOSE data
-        # uvb_dose_total = 0
-        # for i in range(1, len(data_dict['WEEKS']) * data_dict['WEEKLY_SESSIONS']):
-        #     # Initialize with np.nan, will replace if session data is found
-        #     uvb_dose_key = f"UVB_DOSE_{i}"
-        #     pre_filled_data[uvb_dose_key] = [np.nan]
-        #
-        #     # Loop through each week to find the corresponding session
-        #     for week in data_dict['WEEKS']:
-        #         session_key = f"session_{i}"
-        #         if session_key in week:
-        #             session = week[session_key]
-        #             # If actual_dose is present and not an empty string, use it
-        #             if 'actual_dose' in session and session['actual_dose'] != "":
-        #                 uvb_dose_total += session['actual_dose']
-        #                 pre_filled_data[uvb_dose_key] = [session['actual_dose']]
-        #                 break  # Found the session, no need to check further
-        #             # # If planned_dose is present and not an empty string, use it
-        #             # elif 'planned_dose' in session and session['planned_dose'] != "":
-        #             #     pre_filled_data[uvb_dose_key] = [session['planned_dose']]
-        #             #     break  # Found the session, no need to check further
-        #             # # If neither actual_dose nor planned_dose is present, np.nan is already set
-
-        # pre_filled_data['UVB_DOSE_TOTAL'] = [uvb_dose_total]
-        #
-        # for key, value in pre_filled_data.items():
-        #     pre_filled_data[key] = matlab.double(pre_filled_data[key])
-        #
-        # data_struct = eng.struct(pre_filled_data)
-
-        # Define paths
-        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
-        sbml_model_path_matlab = eng.char(sbml_model_path)
-
-        # Add MATLAB scripts directory to MATLAB engine's path
-        matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
-        eng.addpath(matlab_scripts_path, nargout=0)
-
         # Call the MATLAB function
-        best_uv_eff = eng.find_uv_eff(sbml_model_path_matlab, uvb_doses, pasis, time_doses, time_pasis, nargout=1)
+        best_uv_eff = eng.find_uv_eff(model, uvb_doses, pasis, time_doses, time_pasis, nargout=1)
 
         # Quit MATLAB engine
         eng.quit()
@@ -233,7 +181,7 @@ def simulate_model(request):
     # uv_eff = matlab.double(uv_eff)
     print(uv_eff)
     # Starting the MATLAB engine
-    eng = matlab.engine.start_matlab()
+    model, eng = prepare_matlab()
 
     # for filling in UVB_DOSE data
     uvb_dose_total = 0
@@ -255,7 +203,7 @@ def simulate_model(request):
                 elif 'planned_dose' in session and session['planned_dose'] != "":
                     uvb_doses[i - 1] = matlab.double(session['planned_dose'])
                     break  # Found the session, no need to check further
-                # # If neither actual_dose nor planned_dose is present, np.nan is already set
+                # If neither actual_dose nor planned_dose is present, np.nan is already set
 
     # Assuming data_dict is your treatment plan data structure
     pasi_pre_treatment_date = datetime.datetime.strptime(treatment_plan['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
@@ -295,17 +243,8 @@ def simulate_model(request):
     uvb_doses = eng.cell2mat(uvb_doses)
     time_doses = eng.cell2mat(time_doses)
 
-    # Define paths
-    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
-    sbml_model_path_matlab = eng.char(sbml_model_path)
-
-    # Add MATLAB scripts directory to MATLAB engine's path
-    matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
-    eng.addpath(matlab_scripts_path, nargout=0)
-
     # Call the MATLAB function
-    model_sim = eng.simulate_model(uv_eff, sbml_model_path_matlab, uvb_doses, time_doses, nargout=1)
+    model_sim = eng.simulate_model(uv_eff, model, uvb_doses, time_doses, nargout=1)
 
     # Access the Data and DataNames from the struct
     sim_data = model_sim['Data']
@@ -378,17 +317,7 @@ def simulate_file(request):
         df = pd.read_excel(file)
         patients = df.to_dict(orient='records')
 
-        # Setting up MATLAB engine with Paths and Scripts
-        eng = matlab.engine.start_matlab()
-        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
-        sbml_model_path_matlab = eng.char(sbml_model_path)
-        matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
-        eng.addpath(matlab_scripts_path, nargout=0)
-
-        # Preparing Excel Output
-        # output_file_path = os.path.join(project_dir, 'output', 'Patient_Simulations.xlsx')
-        # writer = pd.ExcelWriter(output_file_path, engine='openpyxl')
+        model, eng = prepare_matlab()
 
         # Preparing Excel output
         output = io.BytesIO()
@@ -445,10 +374,10 @@ def simulate_file(request):
                 time_pasis = eng.cell2mat(time_pasis)
 
                 # Find best UV_EFF
-                best_uv_eff = eng.find_uv_eff(sbml_model_path_matlab, doses, pasis, time_doses, time_pasis, nargout=1)
+                best_uv_eff = eng.find_uv_eff(model, doses, pasis, time_doses, time_pasis, nargout=1)
 
                 # Simulate the model with the best_uv_eff
-                model_sim = eng.simulate_model(best_uv_eff, sbml_model_path_matlab, doses, time_doses, nargout=1)
+                model_sim = eng.simulate_model(best_uv_eff, model, doses, time_doses, nargout=1)
 
                 # Extracting and converting simulation data from the MATLAB struct pandas dataframe
                 sim_data = model_sim['Data']
@@ -486,10 +415,6 @@ def simulate_file(request):
             writer.close()
 
         finally:
-
-            # Save Excel file
-            # output.seek(0)
-
             # Quit MATLAB engine
             eng.quit()
 
@@ -502,6 +427,26 @@ def simulate_file(request):
         return Response({"error": "No file uploaded"}, status=400)
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+#                                                   HELPER FUNCTIONS
+# ----------------------------------------------------------------------------------------------------------------------
+
+# function to return model path and the engine object
+def prepare_matlab():
+    eng = matlab.engine.start_matlab()
+
+    # Define paths
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
+    sbml_model_path_matlab = eng.char(sbml_model_path)
+
+    # Add MATLAB scripts directory to MATLAB engine's path
+    matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
+    eng.addpath(matlab_scripts_path, nargout=0)
+
+    return sbml_model_path_matlab, eng
+
+
 # Function to check if file is valid
 def file_isvalid(file):
     df = pd.read_excel(file)
@@ -511,11 +456,11 @@ def file_isvalid(file):
         # Preparing the args for MATLAB
         for column, value in record.items():
             if not (column == 'ID' or column == "PASI_PRE_TREATMENT" or column.startswith(
-                    "PASI_END_WEEK_") or column.startswith(
-                "UVB_DOSE_")):
+                    "PASI_END_WEEK_") or column.startswith("UVB_DOSE_")):
                 return False
 
 
+# Function to check PASI errors
 def check_pasi_errors(pasis, time_pasis, sim_pasis):
     epsilon = 0.0001  # Define how close the numbers need to be to consider them equal
     sim_pasis_time = []
@@ -604,115 +549,7 @@ def generate_model_plot(sim_data_time, sim_data_pasi, time_pasis, pasis, uv_eff,
     return plot_div
 
 
-@api_view(['GET'])
-def test_model(request):
-    # Starting the MATLAB engine
-    eng = matlab.engine.start_matlab()
-    # Define the paths to your SBML and Excel files
-    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_v8_4.xml')
-    # excel_file_path = os.path.join(project_dir, 'model_sbml', 'test_data.xlsx')
-
-    # Convert the paths to MATLAB strings
-    sbml_model_path_matlab = eng.char(sbml_model_path)
-    # excel_data_path_matlab = eng.char(excel_file_path)
-
-    # Example data as a dictionary
-    data_dict = {
-        "ID": [2],
-        "PASI_PRE_TREATMENT": [7],
-        "PASI_END_WEEK_1": [7],
-        "PASI_END_WEEK_2": [4.7],
-        "PASI_END_WEEK_3": [2.4],
-        "PASI_END_WEEK_4": [1.8],
-        "PASI_END_WEEK_5": [2.8],
-        "PASI_END_WEEK_6": [0.8],
-        "PASI_END_WEEK_7": [0.8],
-        "PASI_END_WEEK_8": [0.4],
-        "PASI_END_WEEK_9": [np.nan],
-        "PASI_END_WEEK_10": [np.nan],
-        "PASI_END_WEEK_11": [np.nan],
-        "PASI_END_WEEK_12": [np.nan],
-        "PASI_END_TREATMENT": [0.4],
-        "LAST_FU_PASI": [np.nan],
-        "LAST_FU_MONTH": [np.nan],
-        "UVB_DOSE_1": [0.42],
-        "UVB_DOSE_2": [0.53],
-        "UVB_DOSE_3": [0.74],
-        "UVB_DOSE_4": [0.92],
-        "UVB_DOSE_5": [1.20],
-        "UVB_DOSE_6": [1.20],
-        "UVB_DOSE_7": [1.50],
-        "UVB_DOSE_8": [1.50],
-        "UVB_DOSE_9": [1.80],
-        "UVB_DOSE_10": [1.80],
-        "UVB_DOSE_11": [2.07],
-        "UVB_DOSE_12": [2.07],
-        "UVB_DOSE_13": [2.28],
-        "UVB_DOSE_14": [2.28],
-        "UVB_DOSE_15": [2.39],
-        "UVB_DOSE_16": [2.39],
-        "UVB_DOSE_17": [2.50],
-        "UVB_DOSE_18": [2.50],
-        "UVB_DOSE_19": [2.70],
-        "UVB_DOSE_20": [2.70],
-        "UVB_DOSE_21": [3.00],
-        "UVB_DOSE_22": [3.00],
-        "UVB_DOSE_23": [3.20],
-        "UVB_DOSE_24": [3.20],
-        "UVB_DOSE_25": [np.nan],
-        "UVB_DOSE_26": [np.nan],
-        "UVB_DOSE_27": [np.nan],
-        "UVB_DOSE_28": [np.nan],
-        "UVB_DOSE_29": [np.nan],
-        "UVB_DOSE_30": [np.nan],
-        "UVB_DOSE_31": [np.nan],
-        "UVB_DOSE_32": [np.nan],
-        "UVB_DOSE_33": [np.nan],
-        "UVB_DOSE_TOTAL": [47.89],
-        "UV_EFF_W_12": [0]
-    }
-
-    data_df = pd.DataFrame(data_dict)
-
-    # Assuming data_df is your pandas DataFrame
-    data_dict = data_df.to_dict('list')  # Convert DataFrame to dict of lists
-
-    # Convert numerical lists to matlab.double
-    print(data_dict)
-    for key, val in data_dict.items():
-        data_dict[key] = matlab.double(val if val else [np.nan])  # Handle empty lists
-
-    print(data_dict)
-
-    # Convert dictionary to MATLAB struct
-    data_struct = eng.struct(data_dict)
-
-    # Add your MATLAB scripts directory to the MATLAB engine's path
-    matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
-    eng.addpath(matlab_scripts_path, nargout=0)
-
-    # Assuming 'fit_uv_eff' is adapted to receive serialized model info and data structure
-    # Call the MATLAB function with serialized model and data
-    result = eng.fit_uv_eff(data_struct, sbml_model_path_matlab, nargout=2)
-
-    # Extract the sim_data from the matlab.object
-    best_uv_eff = result[0]
-    sim_data = eng.getfield(result[1], 'Data')
-    sim_data_names = eng.getfield(result[1], 'DataNames')
-    # sim_data = [float(value) for value in sim_data[0]]
-
-    # Convert sim_data to JSON serializable float
-    sim_data_python = convert_matlab_double_to_python(sim_data)
-
-    eng.quit()
-    return Response({
-        'result': best_uv_eff,
-        'sim_data_names': sim_data_names,
-        'sim_data': sim_data_python
-    })
-
-
+# Function to convert matlab doubles to python float
 def convert_matlab_double_to_python(value):
     if isinstance(value, matlab.double):
         return [convert_matlab_double_to_python(item) for item in value]
