@@ -1,17 +1,21 @@
+import datetime
+import io
+import json
+import os
+
+import matlab.engine
 import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.http import HttpResponse
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-import matlab.engine
-import os
-import pandas as pd
-from django.http import QueryDict, JsonResponse
-import json
-from rest_framework import status
-import plotly.graph_objects as go
-import datetime
 
 
-@api_view(['POST'])  # Change to POST to accept form data
+@api_view(['POST'])
 def run_model(request):
     # Starting the MATLAB engine
     eng = matlab.engine.start_matlab()
@@ -91,7 +95,7 @@ def run_model(request):
     })
 
 
-@api_view(['POST'])  # Change to POST to accept form data
+@api_view(['POST'])
 def fit_uv_eff(request):
     data_received = request.body.decode('utf-8')
     data_dict = json.loads(data_received)
@@ -220,7 +224,7 @@ def fit_uv_eff(request):
         return Response("Treatment Plan Empty", status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])  # Change to POST to accept form data
+@api_view(['POST'])
 def simulate_model(request):
     data = json.loads(request.body.decode('utf-8'))
     treatment = data['treatment']
@@ -362,8 +366,157 @@ def simulate_model(request):
     })
 
 
+@api_view(['POST'])
+def simulate_file(request):
+    file = request.FILES.get('file')
+
+    if file:
+        # if not file_isvalid(file):
+        #     return Response({"error": "File is not in correct format"}, status=400)
+
+        # Turning data into a list containing dict of each patient data
+        df = pd.read_excel(file)
+        patients = df.to_dict(orient='records')
+
+        # Setting up MATLAB engine with Paths and Scripts
+        eng = matlab.engine.start_matlab()
+        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sbml_model_path = os.path.join(project_dir, 'model_sbml', 'psor_new.xml')
+        sbml_model_path_matlab = eng.char(sbml_model_path)
+        matlab_scripts_path = os.path.join(project_dir, 'matlab_scripts')
+        eng.addpath(matlab_scripts_path, nargout=0)
+
+        # Preparing Excel Output
+        # output_file_path = os.path.join(project_dir, 'output', 'Patient_Simulations.xlsx')
+        # writer = pd.ExcelWriter(output_file_path, engine='openpyxl')
+
+        # Preparing Excel output
+        output = io.BytesIO()
+        writer = pd.ExcelWriter(output, engine='openpyxl')
+
+        # Setup channel for live updates
+        channel_layer = get_channel_layer()
+
+        try:
+            # Fitting and Simulating each patient's data
+            for idx, patient in enumerate(patients):
+                async_to_sync(channel_layer.group_send)(
+                    "simulation_group",
+                    {
+                        "type": "send.progress",
+                        "message": {
+                            "simulating": f"Simulating Patient {patient['ID']}",
+                            "progress": f"{idx} of {len(patients)}"
+                        }
+                    }
+                )
+
+                # Preparing the args for MATLAB
+                if patient["PASI_PRE_TREATMENT"] and patient["PASI_PRE_TREATMENT"] != "":
+                    pasis = [matlab.double([patient["PASI_PRE_TREATMENT"]])]
+                else:
+                    pasis = [np.nan]
+                time_pasis = [0]
+                doses = []
+                time_doses = []
+
+                for column, value in patient.items():
+                    if column.startswith("PASI_END_WEEK_"):
+                        if value and value != "":
+                            pasis.append(matlab.double(value))
+                        else:
+                            pasis.append(np.nan)
+                    elif column.startswith("UVB_DOSE_"):
+                        if value and value != "":
+                            doses.append(matlab.double(value))
+                        else:
+                            doses.append(np.nan)
+
+                for i in range(0, len(doses) - 1):
+                    time_doses.append((i + 1) * 3)
+
+                for i in range(1, len(pasis) - 1):
+                    time_pasis.append((i * 9) + 1)
+
+                # FITTING UV_EFF AND SIMULATING MODEL FOR EACH PATIENT
+                doses = eng.cell2mat(doses)
+                pasis = eng.cell2mat(pasis)
+                time_doses = eng.cell2mat(time_doses)
+                time_pasis = eng.cell2mat(time_pasis)
+
+                # Find best UV_EFF
+                best_uv_eff = eng.find_uv_eff(sbml_model_path_matlab, doses, pasis, time_doses, time_pasis, nargout=1)
+
+                # Simulate the model with the best_uv_eff
+                model_sim = eng.simulate_model(best_uv_eff, sbml_model_path_matlab, doses, time_doses, nargout=1)
+
+                # Extracting and converting simulation data from the MATLAB struct pandas dataframe
+                sim_data = model_sim['Data']
+                sim_data_names = model_sim['DataNames']
+                sim_data_time = [time[0] for time in eng.double(model_sim['Time'])]
+                sim_df = pd.DataFrame(data=sim_data, columns=sim_data_names)
+                sim_df['Time'] = sim_data_time
+
+                # Writing to Excel file, one sheet per patient simulation
+                sheet_name = f"Patient_{patient['ID']}_UV_EFF_{best_uv_eff}"
+                sim_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+                async_to_sync(channel_layer.group_send)(
+                    "simulation_group",
+                    {
+                        "type": "send.progress",
+                        "message": {
+                            "completed": f"Patient {patient['ID']}",
+                            "progress": f"{idx + 1} of {len(patients)}"
+                        }
+                    }
+                )
+
+                print("-" * 30)
+                print(f"PATIENT {patient['ID']}")
+                print(f"DATA: {patient}")
+                print(f"PASIS: {pasis}")
+                print(f"TIME_PASIS: {time_pasis}")
+                print(f"DOSES: {doses}")
+                print(f"TIME_DOSES: {time_doses}")
+                print(f"UV EFFICACY: {best_uv_eff}")
+                print("-" * 30)
+
+            # Save Excel file
+            writer.close()
+
+        finally:
+
+            # Save Excel file
+            # output.seek(0)
+
+            # Quit MATLAB engine
+            eng.quit()
+
+        response = HttpResponse(output.getvalue(),
+                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="Patient_Simulations.xlsx"'
+
+        return response
+    else:
+        return Response({"error": "No file uploaded"}, status=400)
+
+
+# Function to check if file is valid
+def file_isvalid(file):
+    df = pd.read_excel(file)
+    patients = df.to_dict(orient='records')
+
+    for record in patients:
+        # Preparing the args for MATLAB
+        for column, value in record.items():
+            if not (column == 'ID' or column == "PASI_PRE_TREATMENT" or column.startswith(
+                    "PASI_END_WEEK_") or column.startswith(
+                "UVB_DOSE_")):
+                return False
+
+
 def check_pasi_errors(pasis, time_pasis, sim_pasis):
-    # Assuming sim_pasis is your DataFrame and you're interested in Time values close to 7
     epsilon = 0.0001  # Define how close the numbers need to be to consider them equal
     sim_pasis_time = []
 
