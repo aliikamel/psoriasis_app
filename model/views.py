@@ -327,6 +327,17 @@ def simulate_file(request):
         channel_layer = get_channel_layer()
 
         try:
+            all_patients = [f"Patient {patient['ID']}" for patient in patients]
+            async_to_sync(channel_layer.group_send)(
+                "simulation_group",
+                {
+                    "type": "send.progress",
+                    "message": {
+                        "patients": all_patients,
+                    }
+                }
+            )
+
             # Fitting and Simulating each patient's data
             for idx, patient in enumerate(patients):
                 async_to_sync(channel_layer.group_send)(
@@ -334,8 +345,8 @@ def simulate_file(request):
                     {
                         "type": "send.progress",
                         "message": {
-                            "simulating": f"Simulating Patient {patient['ID']}",
-                            "progress": f"{idx} of {len(patients)}"
+                            "simulating": f"Patient {patient['ID']}",
+                            "progress": f"{idx+1} of {len(patients)}"
                         }
                     }
                 )
@@ -395,8 +406,7 @@ def simulate_file(request):
                     {
                         "type": "send.progress",
                         "message": {
-                            "completed": f"Patient {patient['ID']}",
-                            "progress": f"{idx + 1} of {len(patients)}"
+                            "completed": f"Patient {patient['ID']}"
                         }
                     }
                 )

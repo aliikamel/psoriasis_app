@@ -13,7 +13,7 @@ import {
   UsersRound,
   BrainCircuit,
   Ellipsis,
-  Upload
+  Upload,
 } from "lucide-react";
 import Sidebar, { SidebarItem } from "../Sidebar";
 import axios from "axios";
