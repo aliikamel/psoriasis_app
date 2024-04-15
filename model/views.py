@@ -308,14 +308,18 @@ def simulate_model(request):
 @api_view(['POST'])
 def simulate_file(request):
     file = request.FILES.get('file')
+    selected_patients = request.data.get('selected_patients', False)  # Default to False if not provided
+    if selected_patients:
+        selected_patients = json.loads(selected_patients)  # Parsing JSON string to list
 
-    if file:
+    option_1 = request.data.get('all_patients') == "1"
+
+    if file and option_1:
         # if not file_isvalid(file):
         #     return Response({"error": "File is not in correct format"}, status=400)
 
         # Turning data into a list containing dict of each patient data
-        df = pd.read_excel(file)
-        patients = df.to_dict(orient='records')
+        patients_df = pd.read_excel(file)
 
         model, eng = prepare_matlab()
 
@@ -327,7 +331,18 @@ def simulate_file(request):
         channel_layer = get_channel_layer()
 
         try:
+            # Check if there are selected patients and filter the DataFrame
+            if selected_patients:
+                filtered_patients_df = patients_df[patients_df['ID'].isin(selected_patients)]
+            else:
+                filtered_patients_df = patients_df
+
+            # Convert the possibly filtered DataFrame to a list of dictionaries for further processing
+            patients = filtered_patients_df.to_dict(orient='records')
+
+            # Generate all_patients list
             all_patients = [f"Patient {patient['ID']}" for patient in patients]
+
             async_to_sync(channel_layer.group_send)(
                 "simulation_group",
                 {
@@ -346,7 +361,7 @@ def simulate_file(request):
                         "type": "send.progress",
                         "message": {
                             "simulating": f"Patient {patient['ID']}",
-                            "progress": f"{idx+1} of {len(patients)}"
+                            "progress": f"{idx + 1} of {len(patients)}"
                         }
                     }
                 )
@@ -433,6 +448,13 @@ def simulate_file(request):
         response['Content-Disposition'] = 'attachment; filename="Patient_Simulations.xlsx"'
 
         return response
+    elif file and not option_1:
+        df = pd.read_excel(file)
+        patients = df.to_dict(orient='records')
+        all_patients = [f"{patient['ID']}" for patient in patients]
+        print(all_patients)
+        return Response({"patients": all_patients}, status=200)
+        pass
     else:
         return Response({"error": "No file uploaded"}, status=400)
 
