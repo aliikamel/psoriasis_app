@@ -8,6 +8,7 @@ import {
   Calendar,
   UsersRound,
   BrainCircuit,
+  Upload,
 } from "lucide-react";
 
 function SimulateModel() {
@@ -29,6 +30,10 @@ function SimulateModel() {
             text="Model Simulation"
             active
           />
+        </a>
+
+        <a href="upload">
+          <SidebarItem icon={<Upload />} text="Upload & Run" />
         </a>
 
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />

@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
+import { Tooltip } from "flowbite-react";
 
 function Upload_run() {
   const [file, setFile] = useState(null);
@@ -35,6 +36,9 @@ function Upload_run() {
   const [currentStep, setCurrentStep] = useState(1);
   const [filePatients, setFilePatients] = useState(null);
   const [selectedPatients, setSelectedPatients] = useState([]);
+  const [includeActualPasi, setIncludeActualPasi] = useState(false);
+  const [actualPasiColumn, setActualPasiColumn] = useState("");
+  const [unscalePasi, setUnscalePasi] = useState(false);
 
   const nextStep = () => {
     setCurrentStep(currentStep + 1);
@@ -118,17 +122,22 @@ function Upload_run() {
 
   const handleSubmit = async () => {
     const formData = new FormData();
+    formData.append("file", file); // must match key that backend expects
+    formData.append("all_patients", Number(1)); // Send as a Number value
 
-    if (option === "option-1") {
-      formData.append("file", file); // must match key that backend expects
-      formData.append("all_patients", Number(1)); // Send as a string value
-      setIsSimulating(true);
-    } else {
-      formData.append("file", file); // must match key that backend expects
+    if (option !== "option-1") {
       formData.append("selected_patients", JSON.stringify(selectedPatients));
-      formData.append("all_patients", Number(1));
-      setIsSimulating(true);
     }
+
+    if (includeActualPasi) {
+      formData.append("actual_pasi_column", actualPasiColumn);
+    }
+
+    if (unscalePasi) {
+      formData.append("unscale_pasi", Number(1));
+    }
+
+    setIsSimulating(true);
 
     try {
       const response = await axios.post(
@@ -314,7 +323,7 @@ function Upload_run() {
                 {!isSimulating && !downloadReady && (
                   <div className="flex items-center justify-center">
                     {file ? (
-                      <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-600">
+                      <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-600">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           <div className="flex p-6 items-center">
                             <p className="text-xl font-semibold text-gray-700 dark:text-gray-300 mr-8">
@@ -365,77 +374,160 @@ function Upload_run() {
                 {/* OPTIONS SECTION */}
                 {!isSimulating && !downloadReady && (
                   <div>
-                    <h3 className="mb-5 text-lg font-medium text-gray-900 dark:text-white">
-                      Choose Option
-                    </h3>
-                    <ul className="grid w-full gap-6 md:grid-cols-2">
-                      <li>
-                        <input
-                          disabled={file ? false : true}
-                          type="checkbox"
-                          id="option-1"
-                          value=""
-                          className="hidden peer"
-                          onClick={() => handleOptionChange("option-1")}
-                        />
-                        <label
-                          htmlFor="option-1"
-                          className={`h-full text-center inline-flex items-center justify-between w-full p-5 text-gray-500 rounded-lg border-2 cursor-pointer ${
-                            option === "option-1"
-                              ? "bg-white dark:bg-gray-700 border-blue-600 dark:border-blue-600 dark:text-gray-300 text-gray-600"
-                              : "bg-white dark:bg-gray-800 border-gray-200 hover:text-gray-600 dark:hover:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          <div>
-                            <div className="flex h-1/4 justify-center">
-                              <Infinity size={32} />
-                            </div>
+                    <div>
+                      <h3 className="mb-5 text-lg font-medium text-gray-900 dark:text-white">
+                        Choose Option
+                      </h3>
+                      <ul className="grid w-full gap-6 md:grid-cols-2">
+                        <li>
+                          <input
+                            disabled={file ? false : true}
+                            type="checkbox"
+                            id="option-1"
+                            value=""
+                            className="hidden peer"
+                            onClick={() => handleOptionChange("option-1")}
+                          />
+                          <label
+                            htmlFor="option-1"
+                            className={`h-full text-center inline-flex items-center justify-between w-full p-5 text-gray-500 rounded-lg border-2 cursor-pointer ${
+                              option === "option-1"
+                                ? "bg-white dark:bg-gray-700 border-blue-600 dark:border-blue-600 dark:text-gray-300 text-gray-600"
+                                : "bg-white dark:bg-gray-800 border-gray-200 hover:text-gray-600 dark:hover:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex h-1/4 justify-center">
+                                <Infinity size={32} />
+                              </div>
 
-                            <div className="w-full text-lg font-semibold">
-                              Fit & Simulate All
+                              <div className="w-full text-lg font-semibold">
+                                Fit & Simulate All
+                              </div>
+                              <div className="w-full text-sm">
+                                {
+                                  "Fit the UVB efficacy and run the model simulation for each patient"
+                                }
+                              </div>
                             </div>
-                            <div className="w-full text-sm">
-                              {
-                                "Fit the UVB efficacy and run the model simulation for each patient"
-                              }
-                            </div>
-                          </div>
-                        </label>
-                      </li>
-                      <li>
-                        <input
-                          disabled={file ? false : true}
-                          type="checkbox"
-                          id="option-2"
-                          value=""
-                          className="hidden peer"
-                          onClick={() => handleOptionChange("option-2")}
-                        />
-                        <label
-                          htmlFor="option-2"
-                          className={`h-full text-center inline-flex items-center justify-between w-full p-5 text-gray-500 rounded-lg border-2 cursor-pointer ${
-                            option === "option-2"
-                              ? "bg-white dark:bg-gray-700 border-blue-600 dark:border-blue-600 dark:text-gray-300 text-gray-600"
-                              : "bg-white dark:bg-gray-800 border-gray-200 hover:text-gray-600 dark:hover:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          <div>
-                            <div className="flex h-1/4 justify-center">
-                              <Users size={32} />
-                            </div>
+                          </label>
+                        </li>
+                        <li>
+                          <input
+                            disabled={file ? false : true}
+                            type="checkbox"
+                            id="option-2"
+                            value=""
+                            className="hidden peer"
+                            onClick={() => handleOptionChange("option-2")}
+                          />
+                          <label
+                            htmlFor="option-2"
+                            className={`h-full text-center inline-flex items-center justify-between w-full p-5 text-gray-500 rounded-lg border-2 cursor-pointer ${
+                              option === "option-2"
+                                ? "bg-white dark:bg-gray-700 border-blue-600 dark:border-blue-600 dark:text-gray-300 text-gray-600"
+                                : "bg-white dark:bg-gray-800 border-gray-200 hover:text-gray-600 dark:hover:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex h-1/4 justify-center">
+                                <Users size={32} />
+                              </div>
 
-                            <div className="w-full text-lg font-semibold">
-                              Fit & Simulate Patients
+                              <div className="w-full text-lg font-semibold">
+                                Fit & Simulate Patients
+                              </div>
+                              <div className="w-full text-sm">
+                                {
+                                  "Fit the UVB efficacy and run the model simulation for a specific selection of patients"
+                                }
+                              </div>
                             </div>
-                            <div className="w-full text-sm">
-                              {
-                                "Fit the UVB efficacy and run the model simulation for a specific selection of patients"
+                          </label>
+                        </li>
+                      </ul>
+                    </div>
+                    {file && option && (
+                      <div className="flex flex-col items-center justify-center mt-6">
+                        <div className="flex flex-col">
+                          <Tooltip
+                            content="The simulated PASI is min-max scaled, select this option to scale back to normal"
+                            animation="duration-300"
+                          >
+                            <label
+                              data-tooltip-target="tooltip-default"
+                              class="inline-flex items-center cursor-pointer mb-2"
+                            >
+                              <input
+                                onClick={() => setUnscalePasi(!unscalePasi)}
+                                type="checkbox"
+                                class="sr-only peer"
+                                checked={unscalePasi}
+                              />
+                              <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                              <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                Unscale Simulated PASI
+                              </span>
+                            </label>
+                          </Tooltip>
+                          <label class="inline-flex items-center cursor-pointer">
+                            <input
+                              onClick={() =>
+                                setIncludeActualPasi(!includeActualPasi)
                               }
-                            </div>
+                              type="checkbox"
+                              class="sr-only peer"
+                              checked={includeActualPasi}
+                            />
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                              Include Actual PASI Column
+                            </span>
+                          </label>
+                        </div>
+
+                        {includeActualPasi && (
+                          <div className="flex w-fit flex-col mt-4 max-w-72">
+                            <label
+                              for="first_name"
+                              class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                            >
+                              Set Column Name
+                            </label>
+                            <input
+                              type="text"
+                              id="first_name"
+                              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                              placeholder='e.g. "ACTUAL_PASI"'
+                              required
+                              autocomplete="off"
+                              value={actualPasiColumn}
+                              onChange={(e) => {
+                                const trimmedValue = e.target.value.trim();
+                                // Only update the state if the trimmed value is not empty
+                                if (trimmedValue || e.target.value === "") {
+                                  setActualPasiColumn(e.target.value);
+                                }
+                              }}
+                            />
+                            {actualPasiColumn === "" ? (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Set the name of the column to for Actual PASI in
+                                the file
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Column name in file will be "
+                                <span className="text-gray-700 dark:text-gray-200">
+                                  {actualPasiColumn.trim()}
+                                </span>
+                                "
+                              </p>
+                            )}
                           </div>
-                        </label>
-                      </li>
-                    </ul>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -778,10 +870,26 @@ function Upload_run() {
                         Clear
                       </button>
                     </>
+                  ) : includeActualPasi ? (
+                    actualPasiColumn === "" ? (
+                      <button
+                        disabled
+                        className={`inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-400 bg-blue-900 dark:bg-blue-900`}
+                      >
+                        Simulate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSubmit}
+                        className={`inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300`}
+                      >
+                        Simulate
+                      </button>
+                    )
                   ) : (
                     <button
                       onClick={handleSubmit}
-                      className="inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300"
+                      className={`inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300`}
                     >
                       Simulate
                     </button>
