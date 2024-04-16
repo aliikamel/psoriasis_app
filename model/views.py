@@ -307,17 +307,19 @@ def simulate_model(request):
 
 @api_view(['POST'])
 def simulate_file(request):
-    file = request.FILES.get('file')
-    selected_patients = request.data.get('selected_patients', False)  # Default to False if not provided
+    file = request.FILES.get('file', False)  # Default to False if not provided
+    selected_patients = request.data.get('selected_patients', False)
+    unscale_pasi = request.data.get('unscale_pasi', False)
+    actual_pasi_column_name = request.data.get('actual_pasi_column', None)  # Default to None if not provided
     if selected_patients:
         selected_patients = json.loads(selected_patients)  # Parsing JSON string to list
 
     option_1 = request.data.get('all_patients') == "1"
 
-    if file and option_1:
-        # if not file_isvalid(file):
-        #     return Response({"error": "File is not in correct format"}, status=400)
+    if not file_isvalid(file):
+        return Response({"error": "File is not in correct format"}, status=400)
 
+    if file and option_1:
         # Turning data into a list containing dict of each patient data
         patients_df = pd.read_excel(file)
 
@@ -343,28 +345,16 @@ def simulate_file(request):
             # Generate all_patients list
             all_patients = [f"Patient {patient['ID']}" for patient in patients]
 
-            async_to_sync(channel_layer.group_send)(
-                "simulation_group",
-                {
-                    "type": "send.progress",
-                    "message": {
-                        "patients": all_patients,
-                    }
-                }
-            )
+            message = {"patients": all_patients}
+            send_progress_message(channel_layer, message)
 
             # Fitting and Simulating each patient's data
             for idx, patient in enumerate(patients):
-                async_to_sync(channel_layer.group_send)(
-                    "simulation_group",
-                    {
-                        "type": "send.progress",
-                        "message": {
-                            "simulating": f"Patient {patient['ID']}",
-                            "progress": f"{idx + 1} of {len(patients)}"
-                        }
-                    }
-                )
+                message = {
+                    "simulating": f"Patient {patient['ID']}",
+                    "progress": f"{idx + 1} of {len(patients)}"
+                }
+                send_progress_message(channel_layer, message)
 
                 # Preparing the args for MATLAB
                 if patient["PASI_PRE_TREATMENT"] and patient["PASI_PRE_TREATMENT"] != "":
@@ -412,29 +402,56 @@ def simulate_file(request):
                 sim_df = pd.DataFrame(data=sim_data, columns=sim_data_names)
                 sim_df['Time'] = sim_data_time
 
+                # If user chooses to unscale PASI
+                if unscale_pasi:
+                    pre_treatment_value = float(patient['PASI_PRE_TREATMENT'])
+                    # Update the PASI column by multiplying each value by the PASI_PRE_TREATMENT value
+                    sim_df['PASI'] *= pre_treatment_value
+
+                # If user provides actual_pasi_column_name
+                if actual_pasi_column_name is not None:
+                    # SET PASIS AND TIME_PASIS to python format
+                    pasis = pasis[0]
+                    time_pasis = time_pasis[0]
+                    # Create actual_pasi column with provided actual_pasi_column_name
+                    sim_df[actual_pasi_column_name] = np.nan
+
+                    # Create Abnormal_Reading boolean column
+                    sim_df['Abnormal_Reading'] = np.nan
+
+                    for index, actual_pasi in enumerate(pasis):
+                        if index < len(time_pasis):
+                            time_start = time_pasis[index]
+                            time_end = time_pasis[index] + 1
+                            mask = (sim_df['Time'] >= time_start) & (sim_df['Time'] < time_end)
+
+                            # Set the Actual_PASI value for rows where time_pasi <= Time < time_pasi + 1
+                            sim_df.loc[mask, actual_pasi_column_name] = actual_pasi
+
+                            # Compute average simulated PASI for this interval
+                            average_simulated_pasi = sim_df.loc[mask, 'PASI'].mean()
+
+                            # Calculate the absolute PASI error
+                            abs_pasi_error = abs(actual_pasi - average_simulated_pasi)
+
+                            # Error threshold
+                            threshold = 5 * np.exp(-abs_pasi_error)
+
+                            # Determine if there is an anomaly
+                            is_anomaly = abs_pasi_error > threshold
+
+                            # Set Abnormal_Reading for the time interval only if it's a FLARE
+                            if actual_pasi > average_simulated_pasi:
+                                sim_df.loc[mask, 'Abnormal_Reading'] = 1 if is_anomaly else 0
+                            else:
+                                sim_df.loc[mask, 'Abnormal_Reading'] = 0
+
                 # Writing to Excel file, one sheet per patient simulation
                 sheet_name = f"Patient_{patient['ID']}_UV_EFF_{best_uv_eff}"
                 sim_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-                async_to_sync(channel_layer.group_send)(
-                    "simulation_group",
-                    {
-                        "type": "send.progress",
-                        "message": {
-                            "completed": f"Patient {patient['ID']}"
-                        }
-                    }
-                )
-
-                print("-" * 30)
-                print(f"PATIENT {patient['ID']}")
-                print(f"DATA: {patient}")
-                print(f"PASIS: {pasis}")
-                print(f"TIME_PASIS: {time_pasis}")
-                print(f"DOSES: {doses}")
-                print(f"TIME_DOSES: {time_doses}")
-                print(f"UV EFFICACY: {best_uv_eff}")
-                print("-" * 30)
+                message = {"completed": f"Patient {patient['ID']}"}
+                send_progress_message(channel_layer, message)
 
             # Save Excel file
             writer.close()
@@ -452,9 +469,7 @@ def simulate_file(request):
         df = pd.read_excel(file)
         patients = df.to_dict(orient='records')
         all_patients = [f"{patient['ID']}" for patient in patients]
-        print(all_patients)
         return Response({"patients": all_patients}, status=200)
-        pass
     else:
         return Response({"error": "No file uploaded"}, status=400)
 
@@ -481,15 +496,32 @@ def prepare_matlab():
 
 # Function to check if file is valid
 def file_isvalid(file):
-    df = pd.read_excel(file)
-    patients = df.to_dict(orient='records')
+    if not file:
+        return False
 
-    for record in patients:
-        # Preparing the args for MATLAB
-        for column, value in record.items():
-            if not (column == 'ID' or column == "PASI_PRE_TREATMENT" or column.startswith(
-                    "PASI_END_WEEK_") or column.startswith("UVB_DOSE_")):
-                return False
+    df = pd.read_excel(file)
+    columns = df.columns
+
+    if df.empty or columns.empty:
+        return False
+
+    for column in columns:
+        if not (column == 'ID' or column == "PASI_PRE_TREATMENT" or column.startswith(
+                "PASI_END_WEEK_") or column.startswith("UVB_DOSE_")):
+            return False
+
+    return True
+
+
+# Function to send async simulation updates during simulation
+def send_progress_message(channel_layer, message):
+    async_to_sync(channel_layer.group_send)(
+        "simulation_group",
+        {
+            "type": "send.progress",
+            "message": message
+        }
+    )
 
 
 # Function to check PASI errors
