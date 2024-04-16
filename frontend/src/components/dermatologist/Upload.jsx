@@ -870,22 +870,13 @@ function Upload_run() {
                         Clear
                       </button>
                     </>
-                  ) : includeActualPasi ? (
-                    actualPasiColumn === "" ? (
-                      <button
-                        disabled
-                        className={`inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-400 bg-blue-900 dark:bg-blue-900`}
-                      >
-                        Simulate
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleSubmit}
-                        className={`inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-50 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-300`}
-                      >
-                        Simulate
-                      </button>
-                    )
+                  ) : includeActualPasi && actualPasiColumn === "" ? (
+                    <button
+                      disabled
+                      className={`inline-flex items-center font-medium rounded-lg text-lg px-16 py-2.5 text-gray-400 bg-blue-900 dark:bg-blue-900`}
+                    >
+                      Simulate
+                    </button>
                   ) : (
                     <button
                       onClick={handleSubmit}
@@ -943,14 +934,22 @@ function Upload_run() {
                         </>
                       )}
 
-                      {currentStep === 1 && (
-                        <button
-                          onClick={nextStep}
-                          className={`inline-flex justify-center font-medium rounded-lg text-lg px-12 py-2 focus:ring-blue-300 col-span-2 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-gray-50`}
-                        >
-                          Next
-                        </button>
-                      )}
+                      {currentStep === 1 &&
+                        (includeActualPasi && actualPasiColumn === "" ? (
+                          <button
+                            disabled
+                            className={`inline-flex justify-center font-medium rounded-lg text-lg px-12 py-2 focus:ring-blue-300 col-span-2 bg-blue-800 dark:bg-blue-800 text-gray-400`}
+                          >
+                            Next
+                          </button>
+                        ) : (
+                          <button
+                            onClick={nextStep}
+                            className={`inline-flex justify-center font-medium rounded-lg text-lg px-12 py-2 focus:ring-blue-300 col-span-2 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-gray-50`}
+                          >
+                            Next
+                          </button>
+                        ))}
                     </>
                   ))
                 )}

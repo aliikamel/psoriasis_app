@@ -1,10 +1,10 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./Home";
-import Dashboard from "./dermatologist/Dashboard";
 import Patients from "./dermatologist/Patients";
 import PatientDetails from "./dermatologist/PatientProfile";
 import SimulateModel from "./dermatologist/SimulateModel";
+import Dashboard from "./Dashboard";
 import Upload from "./dermatologist/Upload";
 import Login from "./Login";
 import Register from "./Register";

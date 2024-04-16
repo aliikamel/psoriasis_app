@@ -16,7 +16,7 @@ import {
 // import { useState, useEffect } from "react";
 import Sidebar, { SidebarItem } from "../Sidebar";
 
-function Dashboard() {
+function DermatologistDashboard() {
   const toggleModal = () => {
     let modal = document.getElementById("defaultModal");
     modal.hidden ? (modal.hidden = false) : (modal.hidden = true);
@@ -198,4 +198,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default DermatologistDashboard;

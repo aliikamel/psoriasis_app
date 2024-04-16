@@ -82,51 +82,63 @@ function Navbar() {
               <div className="hidden sm:ml-6 sm:block">
                 <div className="flex space-x-4">
                   <a
-                    href="/dashboard"
+                    href="/"
                     className={
-                      currentPage === "/dashboard"
+                      currentPage === "/"
                         ? "bg-gray-900 " + pageStyle
                         : pageStyle
                     }
                   >
-                    Dashboard
+                    Home
                   </a>
-                  {role === "patient" ? (
+
+                  {isAuthenticated ? (
                     <a
-                      href="/diary"
+                      href="/dashboard"
                       className={
-                        currentPage === "/diary"
+                        currentPage === "/dashboard"
                           ? "bg-gray-900 " + pageStyle
                           : pageStyle
                       }
                     >
-                      {"Diary"}
+                      Dashboard
                     </a>
                   ) : (
                     <a
-                      href="/simulate-model"
+                      href="/explore"
                       className={
-                        currentPage === "/simulate-model"
+                        currentPage === "/explore"
                           ? "bg-gray-900 " + pageStyle
                           : pageStyle
                       }
                     >
-                      {"Model"}
+                      Explore
                     </a>
                   )}
-
-                  <a
-                    href="#"
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
-                  >
-                    {isAuthenticated ? "" : ""}
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
-                  >
-                    {/* {role} */}
-                  </a>
+                  {role === "dermatologist" && (
+                    <>
+                      <a
+                        href="/patients"
+                        className={
+                          currentPage === "/patients"
+                            ? "bg-gray-900 " + pageStyle
+                            : pageStyle
+                        }
+                      >
+                        Patients
+                      </a>
+                      <a
+                        href="/upload"
+                        className={
+                          currentPage === "/upload"
+                            ? "bg-gray-900 " + pageStyle
+                            : pageStyle
+                        }
+                      >
+                        Upload & Run
+                      </a>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
