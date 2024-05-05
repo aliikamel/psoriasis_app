@@ -13,6 +13,7 @@ import Navbar from "./Navbar";
 import { PrivateRoute } from "./PrivateRoute";
 import { ThemeProvider } from "../context/ThemeContext";
 import { AuthProvider } from "../context/AuthContext";
+import Error404 from "./errors/404";
 
 function App() {
   return (
@@ -35,7 +36,7 @@ function App() {
             <Route
               path="/patients"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowed_roles={["dermatologist"]}>
                   <Patients />
                 </PrivateRoute>
               }
@@ -43,7 +44,7 @@ function App() {
             <Route
               path="/simulate-model"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowed_roles={["dermatologist"]}>
                   <SimulateModel />
                 </PrivateRoute>
               }
@@ -51,7 +52,7 @@ function App() {
             <Route
               path="/upload"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowed_roles={["dermatologist"]}>
                   <Upload />
                 </PrivateRoute>
               }
@@ -59,7 +60,7 @@ function App() {
             <Route
               path="/patients/:patientId"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowed_roles={["dermatologist"]}>
                   <PatientDetails />
                 </PrivateRoute>
               }
@@ -67,11 +68,12 @@ function App() {
             <Route
               path="/profile"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowed_roles={["dermatologist", "patient"]}>
                   <Profile />
                 </PrivateRoute>
               }
             />
+            <Route path="*" element={<Error404 />} />
           </Routes>
         </AuthProvider>
       </Router>
