@@ -38,11 +38,11 @@ PASI_full = transpose(pasis_scaled);
 %Time_full = Time_full(1:num_pasi_points);
 %PASI_full = PASI_full(1:num_pasi_points);
 % getting the indeces of the species from the simulation data by the species name
-species_to_plot = "PASI";
-plot_index = [];
+species = "PASI";
+species_index = [];
 for j=1:length(model.Species)
-    if species_to_plot == model.Species(j).Name
-        plot_index = [plot_index j];
+    if species == model.Species(j).Name
+        species_index = [species_index j];
         break;
     end
 end
@@ -51,7 +51,7 @@ end
 for uv_eff_val=0:0.01:1
     model = sbml_set_parameter_value(model, "uv_eff", uv_eff_val);    
     sim_data = model_sim(model, stop_time);
-    err = absolute_pasi_error(Time_full, PASI_full, sim_data.Time, sim_data.Data(:, plot_index(1)), 0, 1, pasis(1));
+    err = absolute_pasi_error(Time_full, PASI_full, sim_data.Time, sim_data.Data(:, species_index(1)), 0, 1, pasis(1));
     disp(['uv_eff = ' num2str(uv_eff_val) '; sum of abs error = ' num2str(sum(abs(err)))]);
     %disp(['CURRENT BEST ERR= ' num2str(sum(abs(best_err.^2))) '; sum of abs error = ' num2str(sum(abs(err.^2)))]);
     %if(sum(abs(err.^2)) < sum(abs(best_err.^2)))

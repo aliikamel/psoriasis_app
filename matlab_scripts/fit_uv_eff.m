@@ -94,7 +94,7 @@ for k=1:length(data.ID)
     delete(model.Events);
     addevent(model, 'time>=150', 'dc_stim=10000');
     addevent(model, 'time>=154', 'dc_stim=0');
-    % active apoptosis pariod in days
+    % active apoptosis period in days
     a_time = 0.99999;
     % adding events for the UVB doses
     for i=1:30
