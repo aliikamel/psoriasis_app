@@ -13,7 +13,7 @@ import {
   Upload,
 } from "lucide-react";
 
-// import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Sidebar, { SidebarItem } from "../Sidebar";
 
 function DermatologistDashboard() {
