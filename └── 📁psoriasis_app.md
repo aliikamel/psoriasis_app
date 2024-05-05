@@ -1,0 +1,17 @@
+└── 📁psoriasis_app
+    └── .gitignore
+    └── 📁.vscode
+    └── db.sqlite3
+    └── 📁env
+    └── 📁frontend
+        └── 📁public
+        └── 📁src
+    └── manage.py
+    └── 📁matlab_scripts
+    └── 📁model
+    └── 📁model_sbml
+    └── 📁psoriasis_app
+    └── requirements.txt
+    └── 📁users
+    └── db.sqlite3
+    └── requirements.txt
