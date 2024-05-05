@@ -514,13 +514,13 @@ function PatientDetails() {
         <a href="/patients">
           <SidebarItem icon={<UsersRound size={20} />} text="Patients" active />
         </a>
-        <a href="simulate-model">
+        <a href="/simulate-model">
           <SidebarItem
             icon={<BrainCircuit size={20} />}
             text="Model Simulation"
           />
         </a>
-        <a href="upload">
+        <a href="/upload">
           <SidebarItem icon={<Upload />} text="Upload & Run" />
         </a>
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />

@@ -225,12 +225,11 @@ function Upload_run() {
             >
               <div className="flex items-center justify-center">
                 {file && (
-                  <div className="bg-blue-600 mr-2 rounded-full p-1 transition-all duration-300 ease-in-out">
+                  <div className="bg-blue-600 mr-2 rounded-full p-1 transition-all duration-300 ease-in-out text-gray-200 dark:text-gray-900">
                     <Check
                       className="justify-self-end"
                       size={6}
-                      color="#1f2937"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       absoluteStrokeWidth
                     />
                   </div>
@@ -252,18 +251,17 @@ function Upload_run() {
                 } ${
                   file && option
                     ? "dark:bg-blue-500 bg-blue-600"
-                    : "dark:bg-gray-600 dark:border-gray-200"
+                    : "dark:bg-gray-600 bg-gray-300 dark:border-gray-200"
                 }`}
               />
 
               <div className="flex items-center justify-center">
                 {option && (
-                  <div className="bg-blue-600 mr-2 rounded-full p-1 transition-all duration-300 ease-in-out">
+                  <div className="bg-blue-600 mr-2 rounded-full p-1 transition-all duration-300 ease-in-out text-gray-200 dark:text-gray-900">
                     <Check
                       className="justify-self-end"
                       size={6}
-                      color="#1f2937"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       absoluteStrokeWidth
                     />
                   </div>
@@ -282,16 +280,19 @@ function Upload_run() {
               {option === "option-2" && (
                 <>
                   <div
-                    className={`h-[2px] dark:bg-gray-600 dark:border-gray-200`}
+                    className={`h-[2px] transition-all duration-300 ease-in-out ${
+                      selectedPatients.length > 0
+                        ? "dark:bg-blue-500 bg-blue-600"
+                        : "dark:bg-gray-600 bg-gray-300 dark:border-gray-200"
+                    }`}
                   />
                   <div className="w-full flex items-center justify-center">
                     {selectedPatients.length > 0 && (
-                      <div className="bg-blue-600 mr-2 rounded-full p-1 transition-all duration-300 ease-in-out">
+                      <div className="bg-blue-600 mr-2 rounded-full p-1 transition-all duration-300 ease-in-out text-gray-200 dark:text-gray-900">
                         <Check
                           className="justify-self-end"
                           size={6}
-                          color="#1f2937"
-                          strokeWidth={3}
+                          strokeWidth={2}
                           absoluteStrokeWidth
                         />
                       </div>
@@ -539,7 +540,7 @@ function Upload_run() {
                     {isSimulating ? (
                       <h2 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">
                         Simulating{" "}
-                        <span className="font-normal text-gray-200">
+                        <span className="font-normal text-gray-700 dark:text-gray-200">
                           {progress.progress}
                         </span>{" "}
                         Patients:
@@ -551,7 +552,7 @@ function Upload_run() {
                             Download Ready
                           </h2>
                           <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-300">
-                            <span className="font-normal text-gray-200">
+                            <span className="font-normal text-gray-800 dark:text-gray-200">
                               {progress.progress}
                             </span>{" "}
                             Patients Simulated
@@ -562,8 +563,8 @@ function Upload_run() {
 
                     {/* PROGRESS UPDATER */}
 
-                    <div>
-                      <div className="flex flex-col mb-4 items-center">
+                    <div className="w-full">
+                      <div className="flex flex-col mb-4 items-center overflow-y-auto max-h-96 px-6">
                         {progress.patients.map((patient) => {
                           return (
                             <div className="flex items-center w-full">
@@ -572,12 +573,11 @@ function Upload_run() {
                               </p>
 
                               {progress.completed.includes(patient) ? (
-                                <div className="bg-green-400 rounded-full p-1 transition-all duration-300 ease-in-out">
+                                <div className="bg-green-400 rounded-full p-1 transition-all duration-300 ease-in-out text-gray-200 dark:text-gray-900">
                                   <Check
                                     className="justify-self-end"
                                     size={8}
-                                    color="#1f2937"
-                                    strokeWidth={3}
+                                    strokeWidth={2}
                                     absoluteStrokeWidth
                                   />
                                 </div>
@@ -601,8 +601,8 @@ function Upload_run() {
                                   </svg>
                                 </div>
                               ) : (
-                                <div className="rounded-full p-1 transition-all duration-300 ease-in-out">
-                                  <Minus size={8} color="#f9fafb" />
+                                <div className="rounded-full p-1 transition-all duration-300 ease-in-out text-gray-900 dark:text-gray-50">
+                                  <Minus size={8} />
                                 </div>
                               )}
                             </div>
@@ -742,7 +742,7 @@ function Upload_run() {
                     {isSimulating ? (
                       <h2 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">
                         Simulating{" "}
-                        <span className="font-normal text-gray-200">
+                        <span className="font-normal text-gray-700 dark:text-gray-200">
                           {progress.progress}
                         </span>{" "}
                         Patients:
@@ -754,7 +754,7 @@ function Upload_run() {
                             Download Ready
                           </h2>
                           <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-300">
-                            <span className="font-normal text-gray-200">
+                            <span className="font-normal text-gray-800 dark:text-gray-200">
                               {progress.progress}
                             </span>{" "}
                             Patients Simulated
@@ -765,8 +765,8 @@ function Upload_run() {
 
                     {/* PROGRESS UPDATER */}
 
-                    <div>
-                      <div className="flex flex-col mb-4 items-center">
+                    <div className="w-1/2">
+                      <div className="flex flex-col mb-4 items-center overflow-y-auto max-h-96 px-6">
                         {progress.patients.map((patient) => {
                           return (
                             <div className="flex items-center w-full">
@@ -775,12 +775,11 @@ function Upload_run() {
                               </p>
 
                               {progress.completed.includes(patient) ? (
-                                <div className="bg-green-400 rounded-full p-1 transition-all duration-300 ease-in-out">
+                                <div className="bg-green-400 rounded-full p-1 transition-all duration-300 ease-in-out text-gray-200 dark:text-gray-900">
                                   <Check
                                     className="justify-self-end"
                                     size={8}
-                                    color="#1f2937"
-                                    strokeWidth={3}
+                                    strokeWidth={2}
                                     absoluteStrokeWidth
                                   />
                                 </div>
@@ -804,8 +803,8 @@ function Upload_run() {
                                   </svg>
                                 </div>
                               ) : (
-                                <div className="rounded-full p-1 transition-all duration-300 ease-in-out">
-                                  <Minus size={8} color="#f9fafb" />
+                                <div className="rounded-full p-1 transition-all duration-300 ease-in-out text-gray-900 dark:text-gray-50">
+                                  <Minus size={8} />
                                 </div>
                               )}
                             </div>

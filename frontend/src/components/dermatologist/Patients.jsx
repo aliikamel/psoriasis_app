@@ -30,36 +30,35 @@ function Patients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const getAllUsers = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:8000/api/users/users`
-        );
-        console.log("API Response:", response.data);
-        setAllUsers(response.data);
-        setSearchResults(response.data);
-        setLoading(false);
-      } catch (error) {
-        setError("Error fetching data. Please try again.");
-        setLoading(false);
-      }
-    };
-    getAllUsers();
+  const getManagedPatients = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/api/users/get-patients-managed?dermatologist_id=${localStorage.getItem(
+          "userId"
+        )}`
+      );
+      console.log("API Response:", response.data);
+      setManagedPatients(response.data);
+    } catch (error) {
+      setError("Error fetching data. Please try again.");
+    }
+  };
 
-    const getManagedPatients = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:8000/api/users/get-patients-managed?dermatologist_id=${localStorage.getItem(
-            "userId"
-          )}`
-        );
-        console.log("API Response:", response.data);
-        setManagedPatients(response.data);
-      } catch (error) {
-        setError("Error fetching data. Please try again.");
-      }
-    };
+  const getAllUsers = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/users/users`);
+      console.log("API Response:", response.data);
+      setAllUsers(response.data);
+      setSearchResults(response.data);
+      setLoading(false);
+    } catch (error) {
+      setError("Error fetching data. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getAllUsers();
     getManagedPatients();
   }, []);
 
@@ -132,6 +131,8 @@ function Patients() {
         }
       );
       console.log("API Response:", response.data);
+      toggleModal();
+      getManagedPatients();
     } catch (error) {
       console.log("API Response:", error);
       setError("Error fetching data. Please try again.");
