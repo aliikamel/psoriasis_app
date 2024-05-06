@@ -777,7 +777,7 @@ function PatientDetails() {
 
             {/* DOSES AND WEEKLY PASI TABLE */}
             {treatmentPlan ? (
-              <div className="flex flex-col p-0 border-2 bg-white dark:bg-gray-800 rounded-lg border-gray-300 dark:border-gray-600 h-1/2 mb-4 shadow-md">
+              <div className="flex flex-col p-0 border-2 bg-white dark:bg-gray-800 rounded-lg border-gray-300 dark:border-gray-600 h-4/5 mb-4 shadow-md">
                 <div className="overflow-x-auto sm:rounded-lg w-full h-full">
                   <table className="w-full h-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-200">
@@ -1224,11 +1224,7 @@ function PatientDetails() {
               </div>
             )}
 
-            {Object.keys(simulationPlot).length > 0 && (
-              <div className="p-6 border-2 bg-white dark:bg-gray-800 gap-2 flex flex-col justify-center rounded-lg border-gray-300 dark:border-gray-700 rounded-lg h-auto md:h-auto mb-4">
-                <MyPlotComponent plotData={simulationPlot} />
-              </div>
-            )}
+
             {/* <div className="p-6 border-2 bg-white dark:bg-gray-800 gap-2 flex flex-col justify-center rounded-lg border-gray-300 dark:border-gray-700 rounded-lg h-auto md:h-auto mb-4">
               <MyPlotComponent plotData={simulationPlot} />
             </div> */}
@@ -1356,7 +1352,7 @@ function PatientDetails() {
             {/* ONLY RENDER IF THERE IS A UV_EFF VALUE INPUTTED */}
             {treatmentPlan &&
               treatmentPlan.WEEKS.some((week) => week.uv_eff !== "") && (
-                <div className="p-6 flex flex-col border-2 bg-white dark:bg-gray-800 items-center rounded-lg border-gray-300 dark:border-gray-600 h-auto mb-4">
+                <div className="p-10 flex flex-col border-2 bg-white dark:bg-gray-800 items-center rounded-lg border-gray-300 dark:border-gray-600 h-auto mb-3">
                   {treatmentPlan.WEEKS.map((week, index) => {
                     if (week.uv_eff !== "") {
                       return (
@@ -1409,6 +1405,11 @@ function PatientDetails() {
                 </div>
               )}
           </div>
+           {Object.keys(simulationPlot).length > 0 && (
+              <div className="col-span-3 p-6 border-2 bg-white dark:bg-gray-800 gap-2 flex flex-col justify-center rounded-lg border-gray-300 dark:border-gray-700 rounded-lg h-auto md:h-auto mb-4">
+                <MyPlotComponent plotData={simulationPlot} />
+              </div>
+            )}
         </div>
       </div>
     </div>

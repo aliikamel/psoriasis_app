@@ -117,13 +117,13 @@ function MyPlotComponent({ plotData }) {
   //  { gridcolor: theme === "dark" ? "#4b5563" : "#f3f4f6" }
 
   return (
-    <div className="mx-auto w-2/3 h-full">
+    <div className="mx-auto w-auto h-full">
       <Plot
         className="flex items-center mx-auto w-full h-full dark:bg-gray-700 rounded-2xl p-2"
         // style={{ position: "relative", display: "flex"}}
         data={[simulatedPASI, actualPASI, preTreatment, abnormalPasi]}
         layout={{
-          width: 960,
+          width: 1200,
           height: 500,
           autosize: true,
           margin: {
