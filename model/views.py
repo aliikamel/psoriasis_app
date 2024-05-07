@@ -473,6 +473,52 @@ def simulate_file(request):
         return Response({"error": "No file uploaded"}, status=400)
 
 
+@api_view(['GET'])
+def test_model(request):
+    # Starting the MATLAB engine
+    model, eng = prepare_matlab()
+
+    doses = [matlab.double(1.0) for i in range(30)]
+    time_doses = [i+2 for i in range(30)]
+
+    doses = eng.cell2mat(doses)
+    time_doses = eng.cell2mat(time_doses)
+
+    # Call the MATLAB function
+    model_sim = eng.simulate_model(0.3, model, doses, time_doses, nargout=1)
+
+    # Access the Data and DataNames from the struct
+    sim_data = model_sim['Data']
+    sim_data_names = model_sim['DataNames']
+    sim_data_time = model_sim['Time']
+
+    # sim_data and sim_data_time likely MATLAB double arrays; convert them to Python list
+    sim_data_python = [list(row) for row in sim_data]
+    sim_data_time_python = [list(row) for row in sim_data_time]
+
+    sim_data_time_python_flat = [item for sublist in sim_data_time_python for item in sublist]
+
+    # sim_data_names is a MATLAB cell array; convert it to a Python list
+    sim_data_names_python = [str(name) for name in sim_data_names]
+
+    # Convert the list of lists into a DataFrame
+    df = pd.DataFrame(sim_data_python, columns=sim_data_names_python)
+
+    # directly add it to your DataFrame as a new column
+    df['Time'] = sim_data_time_python_flat
+
+    # Quit MATLAB engine
+    eng.quit()
+
+    # Generate the plot data
+    sim_data_time = df['Time'].tolist()  # Extract simulated time points
+    sim_data_pasi = df['PASI'].tolist()  # Extract simulated PASI values
+
+    return Response({
+        'x': sim_data_time,
+        'y': sim_data_pasi
+    })
+
 # ----------------------------------------------------------------------------------------------------------------------
 #                                                   HELPER FUNCTIONS
 # ----------------------------------------------------------------------------------------------------------------------
