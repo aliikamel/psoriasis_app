@@ -10,14 +10,12 @@ import {
   BrainCircuit,
   Upload,
   Infinity,
-  User,
   Users,
   Trash2,
   Check,
   FileDown,
   Minus,
   ArrowLeft,
-  ArrowRight,
 } from "lucide-react";
 import { Tooltip } from "flowbite-react";
 
@@ -457,31 +455,31 @@ function Upload_run() {
                           >
                             <label
                               data-tooltip-target="tooltip-default"
-                              class="inline-flex items-center cursor-pointer mb-2"
+                              className="inline-flex items-center cursor-pointer mb-2"
                             >
                               <input
                                 onClick={() => setUnscalePasi(!unscalePasi)}
                                 type="checkbox"
-                                class="sr-only peer"
+                                className="sr-only peer"
                                 checked={unscalePasi}
                               />
-                              <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                              <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                              <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
                                 Unscale Simulated PASI
                               </span>
                             </label>
                           </Tooltip>
-                          <label class="inline-flex items-center cursor-pointer">
+                          <label className="inline-flex items-center cursor-pointer">
                             <input
                               onClick={() =>
                                 setIncludeActualPasi(!includeActualPasi)
                               }
                               type="checkbox"
-                              class="sr-only peer"
+                              className="sr-only peer"
                               checked={includeActualPasi}
                             />
-                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
                               Include Actual PASI Column
                             </span>
                           </label>
@@ -490,8 +488,8 @@ function Upload_run() {
                         {includeActualPasi && (
                           <div className="flex w-fit flex-col mt-4 max-w-72">
                             <label
-                              for="first_name"
-                              class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                              htmlFor="first_name"
+                              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                             >
                               Set Column Name
                             </label>
@@ -642,7 +640,7 @@ function Upload_run() {
 
           {/* SECOND PAGE */}
           {currentStep === 2 && (
-            <div class="flex h-fit justify-center transition-all duration-500 ease-in-out w-full">
+            <div className="flex h-fit justify-center transition-all duration-500 ease-in-out w-full">
               <div className="p-6 space-y-4 md:space-y-6 sm:p-8 w-full">
                 {!isSimulating && !downloadReady && (
                   <>
@@ -651,11 +649,11 @@ function Upload_run() {
                     </h3>
                     {filePatients ? (
                       <div className="max-h-96 overflow-y-auto w-full rounded-lg">
-                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                              <th scope="col" class="p-4">
-                                <div class="flex items-center">
+                              <th scope="col" className="p-4">
+                                <div className="flex items-center">
                                   <input
                                     id="checkbox-all"
                                     type="checkbox"
@@ -664,14 +662,14 @@ function Upload_run() {
                                       selectedPatients.length ===
                                       filePatients.length
                                     }
-                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                   />
-                                  <label for="checkbox-all" class="sr-only">
+                                  <label for="checkbox-all" className="sr-only">
                                     checkbox
                                   </label>
                                 </div>
                               </th>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Patient
                               </th>
                             </tr>
@@ -681,10 +679,10 @@ function Upload_run() {
                               return (
                                 <tr
                                   key={`patient-${patient}`}
-                                  class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
                                 >
-                                  <td class="w-4 p-4">
-                                    <div class="flex items-center">
+                                  <td className="w-4 p-4">
+                                    <div className="flex items-center">
                                       <input
                                         id={`checkbox-patient-${patient}`}
                                         type="checkbox"
@@ -692,11 +690,11 @@ function Upload_run() {
                                         checked={selectedPatients.includes(
                                           Number(patient)
                                         )}
-                                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                       />
                                       <label
-                                        for="checkbox-table-1"
-                                        class="sr-only"
+                                        htmlFor="checkbox-table-1"
+                                        className="sr-only"
                                       >
                                         checkbox
                                       </label>
@@ -704,7 +702,7 @@ function Upload_run() {
                                   </td>
                                   <th
                                     scope="row"
-                                    class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
                                   >
                                     {`Patient ${patient}`}
                                   </th>

@@ -2,12 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Home,
-  StickyNote,
   Layers,
-  Flag,
   Calendar,
-  LifeBuoy,
-  Settings,
   X,
   Check,
   UsersRound,

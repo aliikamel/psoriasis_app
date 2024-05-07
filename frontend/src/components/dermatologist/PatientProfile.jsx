@@ -276,10 +276,6 @@ function PatientDetails() {
     }
   }, [openedSessionDetails]);
 
-  const handleMissedSessionCheck = (e) => {
-    setMissedOpenedSession(e.target.checked);
-  };
-
   const getUpdatedDateOptions = (openedSessionDetails, existingOptions) => {
     const sessionKey = Object.keys(openedSessionDetails)[0];
     const sessionData = openedSessionDetails[sessionKey];

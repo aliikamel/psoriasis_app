@@ -1,19 +1,6 @@
 import React from "react";
 import Plot from "react-plotly.js";
 import { useTheme } from "../../context/ThemeContext";
-// import { LineChart } from "@tremor/react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-
-import { X } from "lucide-react";
 
 function MyPlotComponent({ plotData }) {
   const { theme } = useTheme();

@@ -2,18 +2,12 @@ import React from "react";
 import {
   LayoutDashboard,
   Home,
-  StickyNote,
   Layers,
-  Flag,
   Calendar,
-  LifeBuoy,
-  Settings,
   UsersRound,
   BrainCircuit,
   Upload,
 } from "lucide-react";
-
-import { useState, useEffect } from "react";
 import Sidebar, { SidebarItem } from "../Sidebar";
 
 function DermatologistDashboard() {
@@ -71,7 +65,7 @@ function DermatologistDashboard() {
         <div
           hidden
           id="defaultModal"
-          tabindex="-1"
+          tabIndex="-1"
           aria-hidden="true"
           className="backdrop-blur-sm overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
         >
@@ -97,9 +91,9 @@ function DermatologistDashboard() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      fill-rule="evenodd"
+                      fillRule="evenodd"
                       d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clip-rule="evenodd"
+                      clipRule="evenodd"
                     ></path>
                   </svg>
                   <span className="sr-only">Close modal</span>
@@ -110,7 +104,7 @@ function DermatologistDashboard() {
                 <div className="grid gap-4 mb-4 sm:grid-cols-2">
                   <div>
                     <label
-                      for="name"
+                      htmlFor="name"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Name
@@ -126,7 +120,7 @@ function DermatologistDashboard() {
                   </div>
                   <div>
                     <label
-                      for="brand"
+                      htmlFor="brand"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Username
@@ -143,7 +137,7 @@ function DermatologistDashboard() {
 
                   <div className="sm:col-span-2">
                     <label
-                      for="description"
+                      htmlFor="description"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Medical History/Notes
@@ -167,9 +161,9 @@ function DermatologistDashboard() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      fill-rule="evenodd"
+                      fillRule="evenodd"
                       d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                      clip-rule="evenodd"
+                      clipRule="evenodd"
                     ></path>
                   </svg>
                   Add Patient

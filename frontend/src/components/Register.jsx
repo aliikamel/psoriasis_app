@@ -115,7 +115,7 @@ function Register() {
                 >
                   <div>
                     <label
-                      for="first_name"
+                      htmlFor="first_name"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Name
@@ -141,7 +141,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="email"
+                      htmlFor="email"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Email
@@ -157,7 +157,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="password"
+                      htmlFor="password"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Password
@@ -173,7 +173,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="confirm-password"
+                      htmlFor="confirm-password"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Confirm password
@@ -199,7 +199,7 @@ function Register() {
                     </div>
                     <div className="ml-3 text-sm">
                       <label
-                        for="terms"
+                        htmlFor="terms"
                         className="font-light text-gray-500 dark:text-gray-300"
                       >
                         I accept the{" "}
@@ -236,7 +236,7 @@ function Register() {
                 >
                   <div>
                     <label
-                      for="first_name"
+                      htmlFor="first_name"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Name
@@ -262,7 +262,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="email"
+                      htmlFor="email"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Email
@@ -278,7 +278,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="password"
+                      htmlFor="password"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Password
@@ -294,7 +294,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="confirm-password"
+                      htmlFor="confirm-password"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Confirm password
@@ -310,7 +310,7 @@ function Register() {
                   </div>
                   <div>
                     <label
-                      for="license-number"
+                      htmlFor="license-number"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       License Number
@@ -337,7 +337,7 @@ function Register() {
                     </div>
                     <div className="ml-3 text-sm">
                       <label
-                        for="terms"
+                        htmlFor="terms"
                         className="font-light text-gray-500 dark:text-gray-300"
                       >
                         I accept the{" "}

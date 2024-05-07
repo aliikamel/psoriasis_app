@@ -3,17 +3,7 @@ import axios from "axios";
 import {
   LayoutDashboard,
   Home,
-  Layers,
   Calendar,
-  UsersRound,
-  BrainCircuit,
-  Pencil,
-  CirclePlus,
-  X,
-  Save,
-  Crosshair,
-  CirclePlay,
-  Upload,
 } from "lucide-react";
 import profile from "../../assets/Profile.svg";
 

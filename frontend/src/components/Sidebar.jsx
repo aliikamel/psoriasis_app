@@ -1,6 +1,4 @@
-import { ChevronFirst, ChevronLast, MoreVertical } from "lucide-react";
-import logo from "../assets/Logo-wh.svg";
-import profile from "../assets/Profile.svg";
+import { ChevronFirst, ChevronLast } from "lucide-react";
 import { createContext, useContext, useState } from "react";
 
 const SidebarContext = createContext();
@@ -72,4 +70,3 @@ export function SidebarItem({ icon, text, active, alert }) {
     </li>
   );
 }
-

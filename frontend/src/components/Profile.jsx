@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import psoriasis from "../assets/psoriasis-1.jpg";
 import profile from "../assets/Profile.svg";
 import { Datepicker, Avatar } from "flowbite-react";
@@ -25,7 +25,7 @@ function Profile() {
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               <div>
                 <label
-                  for="user_name"
+                  htmlFor="user_name"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Username
@@ -42,7 +42,7 @@ function Profile() {
               </div>
               <div>
                 <label
-                  for="first_name"
+                  htmlFor="first_name"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Name
@@ -68,7 +68,7 @@ function Profile() {
               </div>
               <div>
                 <label
-                  for="email"
+                  htmlFor="email"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Email
@@ -85,7 +85,7 @@ function Profile() {
               <div className="grid grid-cols-2 gap-4">
                 {/* <div>
                   <label
-                    for="date_of_birth"
+                    htmlFor="date_of_birth"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
                     Date of Birth
@@ -112,7 +112,7 @@ function Profile() {
                 </div> */}
                 <div>
                   <label
-                    for="date_of_birth"
+                    htmlFor="date_of_birth"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
                     Date of Birth
@@ -121,7 +121,7 @@ function Profile() {
                 </div>
                 <div>
                   {/* <label
-                    for="contact_number"
+                    htmlFor="contact_number"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
                     Contact Number
@@ -134,8 +134,8 @@ function Profile() {
                     placeholder=""
                   /> */}
                   <label
-                    for="contact_number"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    htmlFor="contact_number"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
                     Phone number:
                   </label>
@@ -152,7 +152,7 @@ function Profile() {
 
               <div>
                 <label
-                  for="password"
+                  htmlFor="password"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Password
@@ -170,7 +170,7 @@ function Profile() {
               <div className="flex items-start">
                 <div className="ml-3 text-sm">
                   <label
-                    for="change_password"
+                    htmlFor="change_password"
                     className="font-light text-gray-500 dark:text-gray-300"
                   >
                     <a
