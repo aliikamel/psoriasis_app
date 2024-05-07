@@ -104,7 +104,6 @@ def fit_uv_eff(request):
         # Starting the MATLAB engine
         model, eng = prepare_matlab()
 
-        # Assuming data_dict is your treatment plan data structure
         pasi_pre_treatment_date = datetime.datetime.strptime(data_dict['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
         treatment_start_date = datetime.datetime.strptime(data_dict['TREATMENT_START_DATE'], "%d/%m/%Y").date()
 
@@ -264,7 +263,7 @@ def simulate_model(request):
     # Convert the list of lists into a DataFrame
     df = pd.DataFrame(sim_data_python, columns=sim_data_names_python)
 
-    # Now you can directly add it to your DataFrame as a new column
+    # directly add it to your DataFrame as a new column
     df['Time'] = sim_data_time_python_flat
 
     # Scale the PASIS
@@ -272,7 +271,7 @@ def simulate_model(request):
 
     print(df.head())
 
-    # If you want to select specific columns ('PASI' and 'Time') and send them back
+    # select specific columns ('PASI' and 'Time') and send them back
     # sim_pasi_time = df[['PASI', 'Time']].to_dict(orient='list')
     sim_pasi_time = df[['PASI', 'Time']]
 
@@ -298,8 +297,8 @@ def simulate_model(request):
             anomalies['abnormal_time_pasis'].append(item['actual_time'])
 
     return Response({
-        'x': sim_data_time,  # or your specific logic for time
-        'y': sim_data_pasi,  # or your specific logic for PASI values
+        'x': sim_data_time,
+        'y': sim_data_pasi,
         'actual_pasis': actual_pasis,
         'anomalies': anomalies
     })
@@ -542,7 +541,7 @@ def check_pasi_errors(pasis, time_pasis, sim_pasis):
                 print(f"PASI {pasi} at Time {time_pasis[index]}")
                 simulated_pasi = first_row['PASI']
 
-                # I want to do my anomaly detection here where i check using the function threshold here
+                # do anomaly detection here where I check using the function threshold here
                 print(first_row)
 
                 # ABS PASI_ERROR
@@ -552,7 +551,8 @@ def check_pasi_errors(pasis, time_pasis, sim_pasis):
                 threshold = 5 * np.exp(-abs_pasi_error)
 
                 # Check if the simulated PASI is within the threshold range of the actual PASI
-                is_anomaly = abs_pasi_error > threshold
+                # is_anomaly = abs_pasi_error > threshold
+                is_anomaly = abs_pasi_error > threshold and simulated_pasi < pasi
 
                 print("Absolute PASI Error: ", abs_pasi_error)
                 print("Threshold: ", threshold)

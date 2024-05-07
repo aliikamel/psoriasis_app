@@ -12,10 +12,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_patient_profile(self, obj):
-        if hasattr(obj, 'patient_profile'):  # Assuming there's a reverse relation named 'patientprofile'
+        if hasattr(obj, 'patient_profile'):
             profile = PatientProfile.objects.get(user=obj)
             return PatientProfileSerializer(profile).data
-        elif hasattr(obj, 'dermatologist_profile'):  # Assuming there's a reverse relation named 'patientprofile'
+        elif hasattr(obj, 'dermatologist_profile'):
             profile = DermatologistProfile.objects.get(user=obj)
             return DermatologistProfileSerializer(profile).data
         return None
@@ -24,7 +24,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class PatientTreatmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientTreatment
-        fields = '__all__'  # Add more fields as you define them in your model
+        fields = '__all__'
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):
@@ -122,6 +122,5 @@ class UserCreateSerializer(serializers.ModelSerializer):
                     user=user,
                     license_number=validated_data.get('license_number', None),
                 )
-            # Handle other roles as necessary
 
         return user

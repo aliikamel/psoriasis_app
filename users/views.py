@@ -193,22 +193,36 @@ def get_patients_managed(request):
         return Response({"error": "Dermatologist ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['GET'])
+# def get_patient_details_by_id(request):
+#     # Get the dermatologist_id from query parameters
+#     patient_id = request.query_params.get('patient_id')
+#
+#     if patient_id is not None:
+#         patient_profile = PatientProfile.objects.get(user_id=patient_id)
+#         if patient_profile:
+#             serializer = PatientProfileSerializer(patient_profile)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         else:
+#             return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
+#     else:
+#         return Response({"error": "Patient ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 def get_patient_details_by_id(request):
-    # Get the dermatologist_id from query parameters
+    # Get the patient_id from query parameters
     patient_id = request.query_params.get('patient_id')
 
     if patient_id is not None:
-        # Assuming `user` is a ForeignKey in PatientProfile pointing to the user model
-        patient_profile = PatientProfile.objects.get(user_id=patient_id)
-        if patient_profile:
+        try:
+            patient_profile = get_object_or_404(PatientProfile, user_id=patient_id)
             serializer = PatientProfileSerializer(patient_profile)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError:
+            # Handle case where patient_id is not a valid integer
+            return Response({"error": "Invalid patient ID format."}, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response({"error": "Patient ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
 
 # VIEWSET CLASSES
 class CustomUserViewSet(viewsets.ModelViewSet):

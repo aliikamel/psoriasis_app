@@ -42,13 +42,11 @@ class DermatologistProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='dermatologist_profile')
     license_number = models.CharField(max_length=20, unique=True, verbose_name='License Number')
     specialization = models.CharField(max_length=100, blank=True, verbose_name='Specialization')
-    # Add more dermatologist-specific fields as needed
 
 
 class DermatologistPatientRelationship(models.Model):
     dermatologist = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='managed_patients')
     patient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='managing_dermatologist')
-    # Add relationship-specific fields here
 
 
 class PatientTreatment(models.Model):
@@ -72,7 +70,7 @@ class PatientTreatment(models.Model):
 class SimulationResult(models.Model):
     treatment = models.ForeignKey(PatientTreatment, on_delete=models.CASCADE, related_name='simulation_results')
     simulation_date = models.DateField()
-    simulation_data = models.JSONField()  # Assuming you're using Django 3.1+
+    simulation_data = models.JSONField()
 
     def __str__(self):
         return f"Simulation on {self.simulation_date} for {self.treatment}"
