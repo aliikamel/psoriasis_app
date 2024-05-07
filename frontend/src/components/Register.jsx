@@ -42,7 +42,7 @@ function Register() {
       );
       console.log("API Response:", response.data);
       login(response.data)
-      navigate("/");
+      navigate("/dashboard");
       // Handle success here
     } catch (error) {
       console.error("API Error:", error.response);
@@ -80,7 +80,7 @@ function Register() {
       );
       console.log("API Response:", response.data);
       login(response.data);
-      navigate("/");
+      navigate("/dashboard");
       // Handle success here
     } catch (error) {
       console.error("API Error:", error.response);

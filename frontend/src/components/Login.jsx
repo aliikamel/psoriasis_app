@@ -40,7 +40,7 @@ function Login() {
       console.log("API Response:", response.data);
       login(response.data);
       // Redirect to home page upon successful login
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
       console.error("API Error:", error.response);
       // Handle error here (e.g., showing an error message)
