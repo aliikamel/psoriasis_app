@@ -33,7 +33,7 @@ function Profile() {
                 <input
                   disabled
                   type="text"
-                  placeholder="current username"
+                  placeholder={`${localStorage.getItem("username")}`}
                   name="user_name"
                   id="user_name"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -53,7 +53,7 @@ function Profile() {
                     name="first_name"
                     id="first_name"
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    placeholder="First Name"
+                    placeholder={`${localStorage.getItem("firstName")}`}
                     required="true"
                   />
                   <input
@@ -61,7 +61,7 @@ function Profile() {
                     name="last_name"
                     id="last_name"
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    placeholder="Last Name"
+                    placeholder={`${localStorage.getItem("lastName")}`}
                     required="true"
                   />
                 </div>
@@ -78,7 +78,7 @@ function Profile() {
                   name="email"
                   id="email"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="name@company.com"
+                  placeholder={`${localStorage.getItem("email")}`}
                   required="true"
                 />
               </div>

@@ -21,6 +21,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("refreshToken", data.refresh);
     localStorage.setItem("userRole", data.role);
     localStorage.setItem("userId", data.id);
+    localStorage.setItem("firstName", data.first_name);
+    localStorage.setItem("lastName", data.last_name);
+    localStorage.setItem("email", data.email);
+    localStorage.setItem("password", data.password);
+    localStorage.setItem("username", data.username);
+    
     setIsAuthenticated(true);
     setRole(data.role);
   };

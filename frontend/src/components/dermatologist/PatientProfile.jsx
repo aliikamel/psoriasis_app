@@ -766,7 +766,7 @@ function PatientDetails() {
                   {`${patientDetails.user.first_name} ${patientDetails.user.last_name}'s Dashboard`}
                 </h1>
                 <p className="text-lg font-normal leading-tight tracking-tight text-gray-900 md:text-lg dark:text-gray-400">
-                  {`${patientDetails.user.first_name}'s next treatment is scheduled for 29/03/2024 - in 2 days`}
+                  {`${patientDetails.user.first_name}'s next treatment is scheduled for 11/05/2024 - in 2 days`}
                 </p>
               </div>
             </div>
