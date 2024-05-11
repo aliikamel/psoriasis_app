@@ -65,12 +65,3 @@ class PatientTreatment(models.Model):
         """
         if PatientTreatment.objects.filter(patient_profile=self.patient_profile).exists():
             raise ValidationError('A treatment instance for this patient already exists.')
-
-
-class SimulationResult(models.Model):
-    treatment = models.ForeignKey(PatientTreatment, on_delete=models.CASCADE, related_name='simulation_results')
-    simulation_date = models.DateField()
-    simulation_data = models.JSONField()
-
-    def __str__(self):
-        return f"Simulation on {self.simulation_date} for {self.treatment}"
