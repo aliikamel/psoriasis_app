@@ -4,7 +4,7 @@ from django.db.utils import IntegrityError
 from users.models import *
 
 
-class UserModelTest(TestCase):
+class UsersModelsTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         # Set up users used by all test methods

@@ -5,7 +5,7 @@ from users.models import *
 from users.serializers import *
 
 
-class SerializerTestCase(TestCase):
+class UsersSerializersTest(TestCase):
     def setUp(self):
         # Set up user instances
         self.patient_user = CustomUser.objects.create_user(username='patient_user', password='test123', role='patient')

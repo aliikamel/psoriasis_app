@@ -7,7 +7,7 @@ import json
 import numpy as np
 
 
-class TestModelViews(APITestCase):
+class ModelViewsTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.fit_uv_eff_url = reverse('fit_uv_eff')

@@ -6,7 +6,7 @@ from users.serializers import CustomUserSerializer
 from django.contrib.auth import get_user_model
 
 
-class TestViews(APITestCase):
+class UsersViewsTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.user_data = {
