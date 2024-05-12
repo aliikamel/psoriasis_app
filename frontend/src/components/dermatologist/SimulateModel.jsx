@@ -39,9 +39,6 @@ function SimulateModel() {
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />
         <SidebarItem icon={<Layers size={20} />} text="Tasks" />
 
-        {/* <hr className="my-3" />
-        <SidebarItem icon={<Settings size={20} />} text="Settings" />
-        <SidebarItem icon={<LifeBuoy size={20} />} text="Help" /> */}
       </Sidebar>
 
       <PasiUvbForm />

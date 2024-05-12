@@ -19,8 +19,10 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
+        {/* WRAPPED IN CONTEXT PROVIDER FOR APP */}
         <AuthProvider>
           <Navbar />
+          {/* Specifying all app routes */}
           <Routes>
             <Route exact path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -28,6 +30,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
+                // PRIVATE ROUTES TO SPECIFY ACCESS CONTROL FOR USER ROLES
                 <PrivateRoute>
                   <Dashboard />
                 </PrivateRoute>

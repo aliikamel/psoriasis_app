@@ -87,16 +87,13 @@ function PasiUvbForm() {
         cleanedFormData
       );
       console.log("API Response:", response.data);
-      // Handle success here (e.g., showing a success message, redirecting, etc.)
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here (e.g., showing an error message)
     }
   };
 
-  // Assuming you have state to track initial counts of PASI weeks and UVB doses
-  const initialPasiCount = 8; // Example initial count for PASI weeks
-  const initialUvbCount = 16; // Example initial count for UVB doses
+  const initialPasiCount = 8; //  initial count for PASI weeks
+  const initialUvbCount = 16; //  initial count for UVB doses
 
   return (
     <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
@@ -207,7 +204,7 @@ function PasiUvbForm() {
               Add UVB Dose
             </button>
             <button
-              type="submit" // This ensures the form gets submitted
+              type="submit"
               className="mt-4 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600"
             >
               Submit

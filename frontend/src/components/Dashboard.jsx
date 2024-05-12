@@ -7,6 +7,7 @@ import DermatologistDashboard from "./dermatologist/DermatologistDashboard";
 
 function Dashboard() {
   const { role } = useAuth();
+  // Dynamically render dashboard based on user role else navigate to log in if not logged in
   switch (role) {
     case "dermatologist":
       return <DermatologistDashboard />;

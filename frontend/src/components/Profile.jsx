@@ -197,17 +197,3 @@ function Profile() {
 }
 
 export default Profile;
-
-// <section className="flex flex-row min-h-screen bg-slate-100 dark:bg-gray-900">
-//   <div className="flex-none w-1/3 overflow-hidden">
-//     <img
-//       src={psoriasis}
-//       alt="Psoriasis"
-//       className="h-full w-full rounded-r-lg object-cover shadow-xl shadow-blue-gray-900/50"
-//     />
-//   </div>
-//   <div className="flex-auto w-2/3 p-4">
-//     {/* Your form or content here */}
-//     <div>Hello</div>
-//   </div>
-// </section>;

@@ -65,8 +65,6 @@ function Patients() {
     setSearchQuery(query);
     console.log("ALL USERS: ", allUsers);
     const filteredResults = allUsers.filter((result) => {
-      //   console.log("Query ", query);
-      //   console.log(result.username.includes(query));
       let fullName = `${result.first_name} ${result.last_name}`;
       return (
         result.username.toLowerCase().includes(query.toLowerCase()) ||
@@ -160,9 +158,6 @@ function Patients() {
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />
         <SidebarItem icon={<Layers size={20} />} text="Tasks" />
 
-        {/* <hr className="my-3" />
-        <SidebarItem icon={<Settings size={20} />} text="Settings" />
-        <SidebarItem icon={<LifeBuoy size={20} />} text="Help" /> */}
       </Sidebar>
 
       <div className="w-full h-full p-4 h-auto pt-8">

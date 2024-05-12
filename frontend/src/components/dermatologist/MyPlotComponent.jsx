@@ -19,11 +19,10 @@ function MyPlotComponent({ plotData }) {
   } = plotData;
 
   // Prepare data for the plot
-  // Assuming plotData contains your simulation data including the time points
   let fullTime = x[x.length - 1];
   const maxTime = fullTime / 2;
 
-  // Scale the time points to a 0-12 week range
+  // Scale the time points to a week format
   const scaledTime = x.map((timePoint) => (timePoint / maxTime) * weeks);
   const scaledTimePasis = time_pasis.map(
     (timePoint) => (timePoint / maxTime) * weeks
@@ -150,62 +149,3 @@ function MyPlotComponent({ plotData }) {
 }
 
 export default MyPlotComponent;
-
-// <h3 className="text-lg font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-//   {`Week ${curr_week}: Model Simulation and Actual End-Week PASI | UVB Eff: ${uv_eff}`}
-// </h3>
-
-// <LineChart
-//   className="mt-4 dark:bg-gray-700 w-1/2 h-72"
-//   data={data}
-//   index="Time"
-//   categories={["Pasis"]}
-//   colors={["blue"]}
-//   yAxisWidth={30}
-//   showXAxis={true}
-//   showYAxis={true}
-// />
-
-//
-
-//       <div className="h-96 rounded-lg bg-white dark:bg-gray-700 py-6 text-white">
-//   <ResponsiveContainer width="100%" height="100%">
-//     <LineChart
-//       width={730}
-//       height={250}
-//       data={data}
-//       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-//     >
-//       <CartesianGrid
-//         // strokeDasharray="3 3"
-//         fill={theme === "dark" ? "#1f2937" : "#fff"}
-//         fillOpacity={0.6}
-//       />
-//       <XAxis
-//         label={"Time"}
-//         dataKey="Time"
-//         stroke={theme === "dark" ? "#fff" : "#1f2937"}
-//       />
-//       <YAxis
-//         label={"PASI"}
-//         dataKey="Pasis"
-//         stroke={theme === "dark" ? "#fff" : "#1f2937"}
-//         padding={{ top: 20 }}
-//       />
-//       <Tooltip />
-//       <Legend verticalAlign="top" height={36} />
-//       <Line
-//         type="monotone"
-//         dataKey="Pasis"
-//         strokeWidth={3}
-//         stroke="#3b82f6"
-//       />
-//       <Line
-//         type="monotone"
-//         dataKey="ActualPasi"
-//         stroke="#8884d8"
-//         dot={<X />}
-//       />
-//     </LineChart>
-//   </ResponsiveContainer>
-// </div>

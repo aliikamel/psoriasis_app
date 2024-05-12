@@ -45,9 +45,6 @@ function DermatologistDashboard() {
         <SidebarItem icon={<Calendar size={20} />} text="Calendar" />
         <SidebarItem icon={<Layers size={20} />} text="Tasks" />
 
-        {/* <hr classNameName="my-3" />
-        <SidebarItem icon={<Settings size={20} />} text="Settings" />
-        <SidebarItem icon={<LifeBuoy size={20} />} text="Help" /> */}
       </Sidebar>
 
       <div className="w-full h-full p-4 h-auto pt-8">

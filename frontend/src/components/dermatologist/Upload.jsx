@@ -45,7 +45,7 @@ function Upload_run() {
 
   const handleNext = async () => {
     const formData = new FormData();
-    formData.append("file", file); // must match key that backend expects
+    formData.append("file", file); // matches the key that backend expects
     formData.append("all_patients", Number(0));
 
     try {
@@ -140,10 +140,10 @@ function Upload_run() {
     try {
       const response = await axios.post(
         "http://localhost:8000/api/model/simulate-file/",
-        formData, // Send formData instead of raw file
+        formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data", // This header tells the server to expect form data
+            "Content-Type": "multipart/form-data",
           },
           responseType: "blob", // Important for handling binary data like files
         }
@@ -156,7 +156,6 @@ function Upload_run() {
       console.log("File is ready for download");
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here (e.g., showing an error message)
     }
   };
 
@@ -560,7 +559,6 @@ function Upload_run() {
                     )}
 
                     {/* PROGRESS UPDATER */}
-
                     <div className="w-full">
                       <div className="flex flex-col mb-4 items-center overflow-y-auto max-h-96 px-6">
                         {progress.patients.map((patient) => {

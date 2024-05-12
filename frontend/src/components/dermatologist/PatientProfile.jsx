@@ -232,28 +232,6 @@ function PatientDetails() {
           week.uv_eff = uvEff.best_uv_eff;
           break;
         }
-
-        // const sessions = Object.values(week).filter(
-        //   (session) =>
-        //     session.hasOwnProperty("actual_dose") ||
-        //     session.hasOwnProperty("planned_dose")
-        // ); // Assuming each week object directly contains session objects
-
-        // // Check if all sessions in the week have an actual_dose defined
-        // const allSessionsCompleted = sessions.every(
-        //   (session) =>
-        //     session.actual_dose !== undefined && session.actual_dose !== ""
-        // );
-
-        // // Check if end_week_pasi is defined for the week
-        // const isEndWeekPasiDefined =
-        //   week.end_week_pasi !== undefined && week.end_week_pasi !== "";
-
-        // // If all sessions are completed and end_week_pasi is defined, this is the last complete week
-        // if (allSessionsCompleted && isEndWeekPasiDefined) {
-        //   week.uv_eff = uvEff.best_uv_eff;
-        //   break; // Exit the loop after updating the last complete week
-        // }
       }
     }
 
@@ -290,6 +268,7 @@ function PatientDetails() {
     return existingOptions;
   };
 
+  // post request to update changes to treatment
   const updatePatientTreatment = async (update_treatment_plan) => {
     let treatment = patientDetails.treatment;
     treatment.treatment_plan = update_treatment_plan;
@@ -316,6 +295,7 @@ function PatientDetails() {
     }
   };
 
+  // initial fetching patient details
   const fetchPatientDetails = async () => {
     try {
       const response = await axios.get(
@@ -338,7 +318,6 @@ function PatientDetails() {
   }, [patientId]);
 
   const toggleModal = (modal_id) => {
-    // ERROR IS COMING FROM HERE AS ELEMENT ISNT RENDERED YET on first click
     let modal = document.getElementById(modal_id);
     modal && (modal.hidden ? (modal.hidden = false) : (modal.hidden = true));
     if (modal_id === "edit_session_modal") {
@@ -378,7 +357,7 @@ function PatientDetails() {
         }
       );
       console.log("API Response:", response.data);
-      // close the modal and refetch the patient details
+      // close the modal and re-fetch the patient details
       fetchPatientDetails();
       toggleModal("create_treatment_modal");
     } catch (error) {
@@ -401,10 +380,8 @@ function PatientDetails() {
       console.log("API Response:", response.data);
       setUvEff(response.data);
 
-      // Handle success here (e.g., showing a success message, redirecting, etc.)
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here (e.g., showing an error message)
     }
 
     setCalculatingUvEff(false);
@@ -442,10 +419,8 @@ function PatientDetails() {
       console.log("API Response:", response.data);
       preparePlotData(response.data);
 
-      // Handle success here (e.g., showing a success message, redirecting, etc.)
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here (e.g., showing an error message)
     }
     setSimulatingModel(false);
   };
@@ -470,13 +445,6 @@ function PatientDetails() {
       }
     }
 
-    // let end_week_pasis = {};
-    // treatmentPlan.WEEKS.forEach((week, index) => {
-    //   if (week.end_week_pasi !== "") {
-    //     end_week_pasis[index + 1] = week.end_week_pasi;
-    //   }
-    // });
-
     // Reverse loop through the weeks to find the last complete week
     for (let i = treatmentPlan.WEEKS.length - 1; i >= 0; i--) {
       const week = treatmentPlan.WEEKS[i];
@@ -485,8 +453,6 @@ function PatientDetails() {
         break;
       }
     }
-
-    // plot_data["end_week_pasis"] = end_week_pasis;
 
     plot_data["pasi_pre_treatment"] = treatmentPlan.PASI_PRE_TREATMENT;
     plot_data["weeks"] = treatmentPlan.WEEKS.length;
@@ -727,7 +693,6 @@ function PatientDetails() {
                       type="checkbox"
                       value=""
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      // onChange={handleMissedSessionCheck}
                       onChange={(e) =>
                         handleSessionChange(
                           Object.keys(openedSessionDetails)[0],
@@ -852,7 +817,7 @@ function PatientDetails() {
                               {
                                 length:
                                   treatmentPlan.WEEKS
-                                    .length /* Assuming 3 sessions per week */,
+                                    .length,
                               },
                               (_, weekIndex) => {
                                 // Calculate the global session number
@@ -876,7 +841,6 @@ function PatientDetails() {
                                     className="p-2"
                                   >
                                     {sessionData.actual_dose === "" ? (
-                                      /* dark:hover:bg-blue-700 cursor:pointer */
                                       editingTable ? (
                                         <input
                                           step="0.001"
@@ -967,7 +931,7 @@ function PatientDetails() {
                               className="p-2"
                             >
                               {allSessionsCompleted ? (
-                                // If all sessions in the week are completed, render an input or any other element
+                                // If all sessions in the week are completed, render an end_week_pasi input
                                 editingTable ? (
                                   <input
                                     step="0.001"
@@ -1413,17 +1377,3 @@ function PatientDetails() {
 }
 
 export default PatientDetails;
-
-/* //   
-//           <div className="border-2 bg-white dark:bg-gray-800  rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-96"></div>
-//           <div className="col-span-3 border-2 bg-white dark:bg-gray-800  rounded-lg border-gray-300 dark:border-gray-600 h-96"></div> */
-//
-//
-//    <div className="grid grid-cols-3 gap-4 mb-4">
-//           <div className="col-span-2 border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
-//           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
-//           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
-//           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
-//           <div className="border-2 border-dashed rounded-lg border-gray-300 dark:border-gray-600 h-48 md:h-72"></div>
-//         </div>
-//  */}

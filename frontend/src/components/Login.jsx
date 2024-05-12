@@ -48,7 +48,6 @@ function Login() {
       }
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here (e.g., showing an error message)
     }
   };
 

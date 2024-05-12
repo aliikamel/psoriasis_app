@@ -43,10 +43,8 @@ function Register() {
       console.log("API Response:", response.data);
       login(response.data)
       navigate("/");
-      // Handle success here
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here
     }
   };
 
@@ -54,7 +52,7 @@ function Register() {
     e.preventDefault();
     let data = e.target;
     console.log(e.target);
-    // Add logic for validation
+    // logic for validation goes here
     // if (password === confirm_password) && terms checked
     let formattedData = {
       first_name: data[0].value,
@@ -81,10 +79,8 @@ function Register() {
       console.log("API Response:", response.data);
       login(response.data);
       navigate("/");
-      // Handle success here
     } catch (error) {
       console.error("API Error:", error.response);
-      // Handle error here
     }
   };
 
