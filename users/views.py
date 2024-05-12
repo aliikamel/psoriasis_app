@@ -152,7 +152,7 @@ def create_patient_treatment(request):
 def update_patient_treatment(request):
     treatment = request.data['treatment']
     try:
-        # Assuming 'id' is sent in the request to identify the PatientTreatment instance
+        # ensuring 'id' is sent in the request to identify the PatientTreatment instance
         treatment_id = treatment['id']
 
         # Fetch the treatment instance to be updated

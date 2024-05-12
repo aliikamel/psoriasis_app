@@ -142,12 +142,12 @@ def fit_uv_eff(request):
                     time_doses.append(days_since_start)
 
         # Determine the end of week PASI collection times
-        # Assuming each week's end is represented by the date of the last session plus one day
+        # each week's end is represented by the date of the last session plus one day
         for week_index, week in enumerate(data_dict['WEEKS']):
             first_session_key = f"session_{(week_index * data_dict['WEEKLY_SESSIONS']) + 1}"
             if first_session_key in week:
                 first_session_date = datetime.datetime.strptime(week[first_session_key]['date'], "%d/%m/%Y").date()
-                # Assuming PASI is collected the day after the last session of each week
+                # this is with the assumption that PASI is collected the day after the last session of each week
                 pasi_collection_day = (first_session_date - pasi_pre_treatment_date).days + 7
                 time_pasis.append(pasi_collection_day)
 
@@ -177,8 +177,8 @@ def simulate_model(request):
     treatment = data['treatment']
     treatment_plan = treatment['treatment_plan']
     uv_eff = data['uv_eff']
-    # uv_eff = matlab.double(uv_eff)
     print(uv_eff)
+
     # Starting the MATLAB engine
     model, eng = prepare_matlab()
 
@@ -204,9 +204,8 @@ def simulate_model(request):
                     break  # Found the session, no need to check further
                 # If neither actual_dose nor planned_dose is present, np.nan is already set
 
-    # Assuming data_dict is your treatment plan data structure
-    pasi_pre_treatment_date = datetime.datetime.strptime(treatment_plan['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
 
+    pasi_pre_treatment_date = datetime.datetime.strptime(treatment_plan['PASI_PRE_TREATMENT_DATE'], "%d/%m/%Y").date()
     time_doses = []
     # Iterate through each week and session to fill in time_doses
     for week in treatment_plan['WEEKS']:
@@ -242,7 +241,7 @@ def simulate_model(request):
     uvb_doses = eng.cell2mat(uvb_doses)
     time_doses = eng.cell2mat(time_doses)
 
-    # Call the MATLAB function
+    # Call the MATLAB model simulation function
     model_sim = eng.simulate_model(uv_eff, model, uvb_doses, time_doses, nargout=1)
 
     # Access the Data and DataNames from the struct
@@ -263,7 +262,7 @@ def simulate_model(request):
     # Convert the list of lists into a DataFrame
     df = pd.DataFrame(sim_data_python, columns=sim_data_names_python)
 
-    # directly add it to your DataFrame as a new column
+    # directly add it to the DataFrame as a new column
     df['Time'] = sim_data_time_python_flat
 
     # Scale the PASIS
@@ -310,11 +309,15 @@ def simulate_file(request):
     selected_patients = request.data.get('selected_patients', False)
     unscale_pasi = request.data.get('unscale_pasi', False)
     actual_pasi_column_name = request.data.get('actual_pasi_column', None)  # Default to None if not provided
+
+    # if user selected specific patients to simulate
     if selected_patients:
         selected_patients = json.loads(selected_patients)  # Parsing JSON string to list
 
+    # if user selected option_1 (to simulate all patients)
     option_1 = request.data.get('all_patients') == "1"
 
+    # check file validity first using helper function
     if not file_isvalid(file):
         return Response({"error": "File is not in correct format"}, status=400)
 
@@ -332,7 +335,7 @@ def simulate_file(request):
         channel_layer = get_channel_layer()
 
         try:
-            # Check if there are selected patients and filter the DataFrame
+            # Check if there are selected patients and filter the DataFrame to just those patients
             if selected_patients:
                 filtered_patients_df = patients_df[patients_df['ID'].isin(selected_patients)]
             else:
@@ -344,6 +347,7 @@ def simulate_file(request):
             # Generate all_patients list
             all_patients = [f"Patient {patient['ID']}" for patient in patients]
 
+            # send message displaying all users for the frontend progress updated
             message = {"patients": all_patients}
             send_progress_message(channel_layer, message)
 
@@ -439,7 +443,7 @@ def simulate_file(request):
                             # Determine if there is an anomaly
                             is_anomaly = abs_pasi_error > threshold
 
-                            # Set Abnormal_Reading for the time interval only if it's a FLARE
+                            # Set Abnormal_Reading to 1 for the time interval only if it's a FLARE
                             if actual_pasi > average_simulated_pasi:
                                 sim_df.loc[mask, 'Abnormal_Reading'] = 1 if is_anomaly else 0
                             else:
@@ -504,7 +508,7 @@ def test_model(request):
     # Convert the list of lists into a DataFrame
     df = pd.DataFrame(sim_data_python, columns=sim_data_names_python)
 
-    # directly add it to your DataFrame as a new column
+    # directly add it to DataFrame as a new column
     df['Time'] = sim_data_time_python_flat
 
     # Quit MATLAB engine
@@ -587,7 +591,7 @@ def check_pasi_errors(pasis, time_pasis, sim_pasis):
                 print(f"PASI {pasi} at Time {time_pasis[index]}")
                 simulated_pasi = first_row['PASI']
 
-                # do anomaly detection here where I check using the function threshold here
+                # doing anomaly detection here where I check using the function threshold here
                 print(first_row)
 
                 # ABS PASI_ERROR
