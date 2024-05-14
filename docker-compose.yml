@@ -15,12 +15,14 @@ services:
     environment:
       - POSTGRES_DB=psoriasis_db
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    build: ./psoriasis_app
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
@@ -33,7 +35,9 @@ services:
       - matlab
 
   frontend:
-    build: ./frontend
+    build:
+      context: frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
