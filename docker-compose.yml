@@ -1,38 +1,45 @@
 version: '3.9'
 services:
-  django:
-    build: 
-      dockerfile: Dockerfile
+  matlab:
+    image: mathworks/matlab:r2023b
+    ports:
+      - "8888:8888"
+    environment:
+      - MLM_LICENSE_MODE=Online
+    tty: true  # Keeps MATLAB running interactively
+
+  db:
+    image: postgres
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_DB=psoriasis_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./psoriasis_app
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=1  # Set to 1 for development
+      - DEBUG=1
     depends_on:
       - db
-  db:
-    image: postgres:14-alpine
-    ports:
-      - '5432:5432'
-    environment:
-      - POSTGRES_DB=psoriasis_db
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=secret
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - matlab
+
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    volumes:
-      - ./frontend:/app/frontend
+    build: ./frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
     depends_on:
-      - django
-    environment:
-      - NODE_ENV=development
+      - backend
 
 volumes:
   postgres_data:
